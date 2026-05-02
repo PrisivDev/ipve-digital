@@ -1,5 +1,5 @@
 /**
- * IPVE Digital — Database Seed Script (SQLite)
+ * IPVE Digital — Database Seed Script (PostgreSQL / Supabase)
  * ================================================================
  * Creates initial data for the IPVE school management system:
  * - 6 roles with RBAC permissions (164 permissions)
@@ -141,7 +141,7 @@ async function seedRBAC() {
     action: p.action.toUpperCase(),
     resource: p.resource,
   }));
-  // SQLite doesn't support skipDuplicates, use loop instead
+  // Use loop to avoid conflicts on duplicate permissions
   for (const p of permData) {
     await db.permission.create({ data: p }).catch(() => {});
   }

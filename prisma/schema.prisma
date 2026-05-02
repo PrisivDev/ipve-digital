@@ -1,13 +1,7 @@
 // ================================================================
-// IPVE DIGITAL - Schéma Prisma ORM Complet (SQLite)
+// IPVE DIGITAL - Schéma Prisma ORM Complet (PostgreSQL / Supabase)
 // Institut Polytechnique Vase d'Élites - Abidjan, Côte d'Ivoire
-// Comptabilité OHADA • Offline-first • Multi-tenant
-// ================================================================
-// Adapted from PostgreSQL to SQLite:
-// - All enums converted to String type
-// - BigInt syncVersion fields changed to Int
-// - Removed directUrl
-// - No PostgreSQL-specific features
+// Comptabilité OHADA • Multi-tenant
 // ================================================================
 
 generator client {
@@ -15,8 +9,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./db.sqlite"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ================================================================

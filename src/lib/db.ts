@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client'
  * Prisma client singleton using globalThis pattern.
  *
  * Prevents multiple instances during hot-reloading in development.
- * Uses SQLite via file:./db.sqlite database URL.
+ * Uses Supabase PostgreSQL via DATABASE_URL.
  */
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
