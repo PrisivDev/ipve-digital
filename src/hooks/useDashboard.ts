@@ -1,0 +1,42 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
+
+// ─── Types ──────────────────────────────────────────────────
+
+export interface DashboardApiData {
+  students: { total: number; active: number };
+  teachers: { total: number };
+  programs: { total: number };
+  prospects: { total: number; new: number };
+  payments: { total: number; revenue: number };
+  expenses: { total: number; amount: number };
+  finances: { revenue: number; expenses: number; margin: number; cash: number };
+  academics: { totalGrades: number; avgGrade: number; attendanceRate: number };
+  recentPayments: {
+    id: string;
+    amountPaid: number;
+    paymentDate: string;
+    status: string;
+    student: { firstName: string; lastName: string; studentNumber: string } | null;
+    tranche: { name: string } | null;
+  }[];
+  notifications: Record<string, unknown>[];
+  studentsByProgram: { filiereId: string; _count: { id: number } }[];
+  unreadNotifications: number;
+}
+
+// ─── Hook ───────────────────────────────────────────────────
+
+export function useDashboard() {
+  return useQuery<DashboardApiData>({
+    queryKey: ['dashboard'],
+    queryFn: () =>
+      fetch('/api/dashboard').then((r) => {
+        if (!r.ok) return r.json().then((e) => Promise.reject(e));
+        return r.json();
+      }),
+    staleTime: 60_000, // 1 min
+    refetchInterval: 5 * 60 * 1000, // 5 min instead of 60s
+  });
+}
