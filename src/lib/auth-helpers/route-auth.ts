@@ -27,10 +27,24 @@ interface AuthError {
 export type AuthCheck = AuthResult | AuthError;
 
 /**
- * Verify JWT from cookies. Returns payload or an error response.
+ * Verify JWT from cookies or Authorization header. Returns payload or an error response.
  */
+export function extractAccessToken(request: NextRequest): string | null {
+  // Priority 1: Cookie
+  const cookieToken = request.cookies.get('ipve_access_token')?.value;
+  if (cookieToken) return cookieToken;
+
+  // Priority 2: Authorization header (for cross-origin contexts)
+  const authHeader = request.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.substring(7);
+  }
+
+  return null;
+}
+
 export async function verifyAuth(request: NextRequest): Promise<AuthCheck> {
-  const token = request.cookies.get('ipve_access_token')?.value;
+  const token = extractAccessToken(request);
 
   if (!token) {
     return {

@@ -1,7 +1,8 @@
 /**
  * IPVE Digital — Auth Store (Zustand)
  * Manages authentication state, permissions, and actions.
- * No tokens stored in localStorage — uses httpOnly cookies.
+ * Tokens stored in memory (not localStorage) + sent via Authorization header.
+ * Also sets httpOnly cookies as fallback for same-origin contexts.
  */
 
 import { create } from 'zustand';
@@ -35,6 +36,9 @@ interface AuthState {
     userId: string;
     tempToken: string;
   } | null;
+  // Tokens (in-memory only, never persisted)
+  _accessToken: string | null;
+  _refreshToken: string | null;
 
   // Actions
   login: (email: string, password: string) => Promise<void>;
@@ -46,6 +50,8 @@ interface AuthState {
   checkResourcePermission: (module: string, resource: string, action: string) => boolean;
   clearError: () => void;
   setInitializing: (value: boolean) => void;
+  /** Get auth headers for API calls */
+  getAuthHeaders: () => Record<string, string>;
 }
 
 // ---------------------------------------------------------------------------
@@ -59,16 +65,31 @@ let refreshPromise: Promise<boolean> | null = null;
  * Attempt to refresh the access token via /api/auth/refresh.
  * Uses a singleton promise to prevent concurrent refresh calls.
  */
-async function silentRefresh(): Promise<boolean> {
+async function silentRefresh(refreshToken: string | null): Promise<{ success: boolean; newAccessToken?: string }> {
   if (isRefreshing && refreshPromise) return refreshPromise;
 
   isRefreshing = true;
   refreshPromise = (async () => {
     try {
-      const res = await fetch('/api/auth/refresh', { method: 'POST' });
-      return res.ok;
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      // Send refresh token via Authorization header
+      if (refreshToken) {
+        headers['Authorization'] = `Bearer ${refreshToken}`;
+      }
+      const res = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return { success: true, newAccessToken: data.accessToken };
+      }
+      return { success: false };
     } catch {
-      return false;
+      return { success: false };
     } finally {
       isRefreshing = false;
       refreshPromise = null;
@@ -92,6 +113,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loginError: null,
   requires2FA: false,
   pending2FA: null,
+  _accessToken: null,
+  _refreshToken: null,
+
+  // Auth headers helper
+  getAuthHeaders: () => {
+    const { _accessToken } = get();
+    const headers: Record<string, string> = {};
+    if (_accessToken) {
+      headers['Authorization'] = `Bearer ${_accessToken}`;
+    }
+    return headers;
+  },
 
   // Actions
   login: async (email: string, password: string) => {
@@ -102,6 +135,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
+        credentials: 'include',
       });
 
       const data = await res.json();
@@ -121,13 +155,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return;
       }
 
-      // Login successful — tokens set as httpOnly cookies
+      // Login successful — store tokens in memory
       set({
         user: data.user,
         permissions: data.permissions ?? [],
         isAuthenticated: true,
         isLoading: false,
         loginError: null,
+        _accessToken: data.accessToken ?? null,
+        _refreshToken: data.refreshToken ?? null,
       });
     } catch (error) {
       set({
@@ -152,6 +188,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           totpCode: code,
           tempToken: pending2FA.tempToken,
         }),
+        credentials: 'include',
       });
 
       const data = await res.json();
@@ -169,6 +206,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         loginError: null,
         requires2FA: false,
         pending2FA: null,
+        _accessToken: data.accessToken ?? null,
+        _refreshToken: data.refreshToken ?? null,
       });
     } catch (error) {
       set({
@@ -180,7 +219,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      const { _accessToken } = get();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (_accessToken) headers['Authorization'] = `Bearer ${_accessToken}`;
+      await fetch('/api/auth/logout', { method: 'POST', headers, credentials: 'include' });
     } catch {
       // Silently fail — clear local state regardless
     }
@@ -192,6 +234,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       loginError: null,
       requires2FA: false,
       pending2FA: null,
+      _accessToken: null,
+      _refreshToken: null,
     });
   },
 
@@ -199,14 +243,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
 
     try {
-      // First attempt
-      let res = await fetch('/api/auth/me');
+      const { _accessToken, _refreshToken } = get();
+
+      const makeAuthHeaders = (token: string | null): Record<string, string> => {
+        const h: Record<string, string> = {};
+        if (token) h['Authorization'] = `Bearer ${token}`;
+        return h;
+      };
+
+      // First attempt with current token
+      let res = await fetch('/api/auth/me', {
+        headers: makeAuthHeaders(_accessToken),
+        credentials: 'include',
+      });
 
       // If 401, try silent refresh and retry once
       if (res.status === 401) {
-        const refreshed = await silentRefresh();
-        if (refreshed) {
-          res = await fetch('/api/auth/me');
+        const refreshResult = await silentRefresh(_refreshToken);
+        if (refreshResult.success && refreshResult.newAccessToken) {
+          // Update stored access token
+          set({ _accessToken: refreshResult.newAccessToken });
+          res = await fetch('/api/auth/me', {
+            headers: makeAuthHeaders(refreshResult.newAccessToken),
+            credentials: 'include',
+          });
         }
       }
 
@@ -217,6 +277,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           permissions: [],
           isLoading: false,
           isInitializing: false,
+          _accessToken: null,
+          _refreshToken: null,
         });
         return;
       }
@@ -237,16 +299,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         permissions: [],
         isLoading: false,
         isInitializing: false,
+        _accessToken: null,
+        _refreshToken: null,
       });
     }
   },
 
   changePassword: async (oldPassword: string, newPassword: string) => {
     try {
+      const { _accessToken } = get();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (_accessToken) headers['Authorization'] = `Bearer ${_accessToken}`;
+
       const res = await fetch('/api/auth/change-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ oldPassword, newPassword }),
+        credentials: 'include',
       });
 
       const data = await res.json();

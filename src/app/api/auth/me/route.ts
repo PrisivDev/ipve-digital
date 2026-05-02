@@ -8,7 +8,9 @@ import { json } from '@/lib/json';
  */
 export async function GET(request: NextRequest) {
   try {
-    const accessToken = request.cookies.get('ipve_access_token')?.value;
+    // Try cookie first, then Authorization header (for cross-origin contexts)
+    const accessToken = request.cookies.get('ipve_access_token')?.value
+      ?? request.headers.get('authorization')?.replace('Bearer ', '');
 
     if (!accessToken) {
       return NextResponse.json(

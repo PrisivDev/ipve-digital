@@ -43,9 +43,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Success — set httpOnly cookies
+    // Success — set httpOnly cookies + return tokens in body (for cross-origin contexts)
     const response = NextResponse.json({
       user: result.user,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       permissions: result.permissions,
       message: 'Connexion réussie',
     });

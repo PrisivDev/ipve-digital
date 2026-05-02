@@ -94,6 +94,8 @@ export async function PUT(request: NextRequest) {
 
     const response = NextResponse.json({
       user: result.user,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       permissions: result.permissions,
       message: 'Connexion avec double authentification réussie',
     });

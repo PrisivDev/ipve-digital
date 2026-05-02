@@ -260,7 +260,7 @@ export function setAuthCookies(
       `${COOKIE_ACCESS_TOKEN}=${accessToken}`,
       `Path=/`,
       `HttpOnly`,
-      `SameSite=Lax`,
+      `SameSite=None`,
       `Max-Age=${accessMaxAge}`,
     ].join('; '),
   );
@@ -271,7 +271,7 @@ export function setAuthCookies(
       `${COOKIE_REFRESH_TOKEN}=${refreshToken}`,
       `Path=/`,
       `HttpOnly`,
-      `SameSite=Lax`,
+      `SameSite=None`,
       `Max-Age=${refreshMaxAge}`,
     ].join('; '),
   );
@@ -284,7 +284,7 @@ export function clearAuthCookies(headers: Headers): void {
       `${COOKIE_ACCESS_TOKEN}=`,
       `Path=/`,
       `HttpOnly`,
-      `SameSite=Lax`,
+      `SameSite=None`,
       `Max-Age=0`,
     ].join('; '),
   );
@@ -295,7 +295,7 @@ export function clearAuthCookies(headers: Headers): void {
       `${COOKIE_REFRESH_TOKEN}=`,
       `Path=/`,
       `HttpOnly`,
-      `SameSite=Lax`,
+      `SameSite=None`,
       `Max-Age=0`,
     ].join('; '),
   );

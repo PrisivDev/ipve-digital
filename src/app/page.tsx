@@ -15,7 +15,11 @@ import { useAppStore } from '@/store/app-store';
 // Guard against browser extensions injecting attributes during SSR hydration
 function useMounted() {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    // Use requestAnimationFrame to avoid setState-in-effect warning
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
   return mounted;
 }
 

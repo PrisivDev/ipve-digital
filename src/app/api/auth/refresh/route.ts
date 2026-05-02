@@ -3,8 +3,15 @@ import { authService, AuthError, setAuthCookies } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const refreshTokenValue =
-      request.cookies.get('ipve_refresh_token')?.value;
+    // Try cookie first, then Authorization header (for cross-origin contexts)
+    let refreshTokenValue = request.cookies.get('ipve_refresh_token')?.value;
+
+    if (!refreshTokenValue) {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader?.startsWith('Bearer ')) {
+        refreshTokenValue = authHeader.substring(7);
+      }
+    }
 
     if (!refreshTokenValue) {
       return NextResponse.json(
@@ -16,6 +23,7 @@ export async function POST(request: NextRequest) {
     const result = await authService.refreshToken(refreshTokenValue);
 
     const response = NextResponse.json({
+      accessToken: result.accessToken,
       message: 'Jeton rafraîchi avec succès',
     });
 
@@ -26,7 +34,7 @@ export async function POST(request: NextRequest) {
         `ipve_access_token=${result.accessToken}`,
         'Path=/',
         'HttpOnly',
-        'SameSite=Lax',
+        'SameSite=None',
         'Max-Age=900', // 15 minutes
       ].join('; '),
     );
