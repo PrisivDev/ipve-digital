@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { LoginPage } from '@/components/auth/LoginPage';
 import { Sidebar, MobileSidebar } from '@/components/ipve/sidebar';
@@ -11,6 +11,13 @@ import { ErpView } from '@/components/ipve/views/erp-view';
 import { LmsView } from '@/components/ipve/views/lms-view';
 import { SettingsView } from '@/components/ipve/views/settings-view';
 import { useAppStore } from '@/store/app-store';
+
+// Guard against browser extensions injecting attributes during SSR hydration
+function useMounted() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  return mounted;
+}
 
 function ModuleView() {
   const activeModule = useAppStore((s) => s.activeModule);
@@ -83,11 +90,17 @@ function AuthenticatedApp() {
 export default function Home() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const fetchUser = useAuthStore((s) => s.fetchUser);
+  const mounted = useMounted();
 
   // Check for existing session on mount — non-blocking
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
+
+  // Avoid hydration mismatch from browser extensions (bis_size attributes)
+  if (!mounted) {
+    return null;
+  }
 
   // Immediately show login if not authenticated — no spinner blocking
   if (!isAuthenticated) {
