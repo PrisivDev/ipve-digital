@@ -49,6 +49,7 @@ export function Header() {
     erp: 'ERP - Gestion financière',
     lms: 'LMS - Gestion académique',
     settings: 'Paramètres',
+    profile: 'Mon profil',
   };
 
   return (
@@ -146,11 +147,11 @@ export function Header() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigateTo('settings', 'profile')}>
+            <DropdownMenuItem onClick={() => navigateTo('profile')}>
               <User className="mr-2 h-4 w-4" />
               Mon profil
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigateTo('settings', 'profile')}>
+            <DropdownMenuItem onClick={() => navigateTo('profile', 'preferences')}>
               <Settings className="mr-2 h-4 w-4" />
               Préférences
             </DropdownMenuItem>

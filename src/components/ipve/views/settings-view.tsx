@@ -16,7 +16,8 @@ import {
   Palette,
   Database,
 } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import { useAppStore, type SettingsSection } from '@/store/app-store';
 import { OverviewSettings } from '@/components/ipve/settings/overview-settings';
 import { GeneralSettings } from '@/components/ipve/settings/general-settings';
@@ -109,17 +110,34 @@ export function SettingsView() {
       </div>
 
       <Tabs value={settingsSection} onValueChange={(v) => setSettingsSection(v as SettingsSection)}>
-        <TabsList className="flex-wrap h-auto gap-1 p-1">
-          {settingsTabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <TabsTrigger key={tab.value} value={tab.value} className="gap-1.5 text-xs sm:text-sm">
-                <Icon className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{tab.label}</span>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+        {/* Modern tab bar */}
+        <div className="relative">
+          <div className="flex gap-0.5 overflow-x-auto pb-px scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="flex gap-0.5 min-w-0">
+              {settingsTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = settingsSection === tab.value;
+                return (
+                  <button
+                    key={tab.value}
+                    onClick={() => setSettingsSection(tab.value)}
+                    className={cn(
+                      'relative flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 shrink-0',
+                      isActive
+                        ? 'text-foreground bg-muted shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    )}
+                  >
+                    <Icon className={cn('h-4 w-4', isActive && 'text-[#1B4F72]')} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {/* Bottom border */}
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-border/60" />
+        </div>
 
         {settingsTabs.map((tab) => (
           <TabsContent key={tab.value} value={tab.value}>

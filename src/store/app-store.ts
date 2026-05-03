@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type Module = 'dashboard' | 'crm' | 'erp' | 'lms' | 'settings';
+export type Module = 'dashboard' | 'crm' | 'erp' | 'lms' | 'settings' | 'profile';
 export type CrmSection = 'students' | 'prospects' | 'parents' | 'teachers' | 'employees' | 'enrollments' | 'admissions' | 'student-cards' | 'communications';
 export type ErpSection = 'finance' | 'payments' | 'expenses' | 'budgets' | 'accounting' | 'payroll' | 'unpaid';
 export type LmsSection = 'grades' | 'attendance' | 'timetable' | 'programs' | 'subjects' | 'report-cards';
@@ -43,6 +43,8 @@ interface AppState {
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
   setCurrentUser: (user: AppState['currentUser']) => void;
+  profileTab: 'profil' | 'securite' | 'preferences';
+  setProfileTab: (tab: 'profil' | 'securite' | 'preferences') => void;
   navigateTo: (module: Module, section?: string) => void;
 }
 
@@ -52,6 +54,7 @@ export const useAppStore = create<AppState>((set) => ({
   erpSection: 'finance',
   lmsSection: 'grades',
   settingsSection: 'overview',
+  profileTab: 'profil' as const,
   sidebarOpen: false,
   currentUser: {
     id: '1',
@@ -69,6 +72,7 @@ export const useAppStore = create<AppState>((set) => ({
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setCurrentUser: (user) => set({ currentUser: user }),
+  setProfileTab: (tab) => set({ profileTab: tab, activeModule: 'profile' }),
   navigateTo: (module, section) => {
     const update: Partial<AppState> = { activeModule: module };
     if (module === 'crm' && section) update.crmSection = section as CrmSection;

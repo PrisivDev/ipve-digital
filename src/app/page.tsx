@@ -10,6 +10,7 @@ import { CrmView } from '@/components/ipve/views/crm-view';
 import { ErpView } from '@/components/ipve/views/erp-view';
 import { LmsView } from '@/components/ipve/views/lms-view';
 import { SettingsView } from '@/components/ipve/views/settings-view';
+import { ProfileView } from '@/components/ipve/views/profile-view';
 import { useAppStore } from '@/store/app-store';
 
 // Guard against browser extensions injecting attributes during SSR hydration
@@ -37,6 +38,8 @@ function ModuleView() {
       return <LmsView />;
     case 'settings':
       return <SettingsView />;
+    case 'profile':
+      return <ProfileView />;
     default:
       return <DashboardView />;
   }
