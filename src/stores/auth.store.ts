@@ -59,13 +59,13 @@ interface AuthState {
 // ---------------------------------------------------------------------------
 
 let isRefreshing = false;
-let refreshPromise: Promise<boolean> | null = null;
+let refreshPromise: Promise<{ success: boolean; newAccessToken?: string } | null> | null = null;
 
 /**
  * Attempt to refresh the access token via /api/auth/refresh.
  * Uses a singleton promise to prevent concurrent refresh calls.
  */
-async function silentRefresh(refreshToken: string | null): Promise<{ success: boolean; newAccessToken?: string }> {
+async function silentRefresh(refreshToken: string | null): Promise<{ success: boolean; newAccessToken?: string } | null> {
   if (isRefreshing && refreshPromise) return refreshPromise;
 
   isRefreshing = true;
@@ -85,7 +85,12 @@ async function silentRefresh(refreshToken: string | null): Promise<{ success: bo
       });
       if (res.ok) {
         const data = await res.json();
-        return { success: true, newAccessToken: data.accessToken };
+        const newAccessToken: string | undefined = data.accessToken;
+        if (newAccessToken) {
+          // Update in-memory access token
+          useAuthStore.setState({ _accessToken: newAccessToken });
+        }
+        return { success: true, newAccessToken };
       }
       return { success: false };
     } catch {
@@ -260,7 +265,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // If 401, try silent refresh and retry once
       if (res.status === 401) {
         const refreshResult = await silentRefresh(_refreshToken);
-        if (refreshResult.success && refreshResult.newAccessToken) {
+        if (refreshResult?.success && refreshResult.newAccessToken) {
           // Update stored access token
           set({ _accessToken: refreshResult.newAccessToken });
           res = await fetch('/api/auth/me', {
@@ -284,6 +289,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       const data = await res.json();
+
+      // If we refreshed the token, store it
+      // Also trigger a background refresh to ensure we have a fresh token
+      if (!get()._accessToken && get()._refreshToken) {
+        silentRefresh(get()._refreshToken).catch(() => {});
+      }
 
       set({
         user: data.user,

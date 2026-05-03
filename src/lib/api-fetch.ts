@@ -4,12 +4,66 @@
  * All frontend API calls MUST go through this wrapper.
  * It automatically attaches the Authorization header from the auth store,
  * ensuring every request is authenticated with the current access token.
+ *
+ * Features:
+ * - Auto-attaches Authorization Bearer header from in-memory store
+ * - Sends credentials (cookies) for httpOnly cookie auth fallback
+ * - Automatic token refresh on 401 responses (silent retry)
+ * - Prevents concurrent refresh calls (singleton pattern)
  */
 
 import { useAuthStore } from '@/stores/auth.store';
 
+// ---------------------------------------------------------------------------
+// Internal: silent token refresh (singleton)
+// ---------------------------------------------------------------------------
+
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+/**
+ * Attempt to refresh the access token via /api/auth/refresh.
+ * Uses a singleton promise to prevent concurrent refresh calls.
+ * Returns the new access token or null on failure.
+ */
+async function silentRefresh(): Promise<string | null> {
+  if (isRefreshing && refreshPromise) return refreshPromise;
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const newToken: string | undefined = data.accessToken;
+        if (newToken) {
+          // Store the new access token in memory
+          useAuthStore.setState({ _accessToken: newToken });
+          return newToken;
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+// ---------------------------------------------------------------------------
+// apiFetch
+// ---------------------------------------------------------------------------
+
 /**
  * Authenticated fetch — adds Authorization header + credentials.
+ * Automatically retries on 401 after a silent token refresh.
  * Use this in ALL React Query hooks and any client-side fetch calls.
  */
 export async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
@@ -24,12 +78,35 @@ export async function apiFetch(url: string, init?: RequestInit): Promise<Respons
     }
   }
 
-  return fetch(url, {
+  const res = await fetch(url, {
     ...init,
     headers,
     credentials: 'include',
   });
+
+  // If 401, try silent refresh and retry once
+  if (res.status === 401 && !url.includes('/api/auth/')) {
+    const newToken = await silentRefresh();
+    if (newToken) {
+      const retryHeaders = new Headers(init?.headers);
+      retryHeaders.set('Authorization', `Bearer ${newToken}`);
+      if (!retryHeaders.has('Content-Type') && init?.body && typeof init.body === 'string') {
+        retryHeaders.set('Content-Type', 'application/json');
+      }
+      return fetch(url, {
+        ...init,
+        headers: retryHeaders,
+        credentials: 'include',
+      });
+    }
+  }
+
+  return res;
 }
+
+// ---------------------------------------------------------------------------
+// apiFetchJson
+// ---------------------------------------------------------------------------
 
 /**
  * Convenience: authenticated fetch that parses JSON response.
@@ -48,6 +125,10 @@ export async function apiFetchJson<T = unknown>(
 
   return res.json();
 }
+
+// ---------------------------------------------------------------------------
+// apiFetchData
+// ---------------------------------------------------------------------------
 
 /**
  * Convenience: authenticated fetch that unwraps `{ success, data, error }` responses.

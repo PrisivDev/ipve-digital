@@ -184,3 +184,26 @@ Stage Summary:
 - Zero new TypeScript errors introduced
 - Dev server verified: login responds, auth guards work, health check works
 - Login credentials in seed: admin@ipve.edu.ci / Admin@123
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix school year modification, appearance settings, and improve system data page
+
+Work Log:
+- Investigated the school year modification issue: identified that `apiFetch` didn't have automatic token refresh retry. Access tokens expire after 15 minutes and cookies are also set with 15-min Max-Age. If the token expires, API calls would fail with 401.
+- Added silent token refresh with singleton pattern to `api-fetch.ts` — when a 401 is received, it automatically refreshes the token via `/api/auth/refresh` and retries the request once
+- Fixed `auth.store.ts`: updated `silentRefresh` return type to `{ success: boolean; newAccessToken?: string }`, added null-safe check for refresh result in `fetchUser`, added background token refresh when `_accessToken` is null but `_refreshToken` exists
+- Investigated appearance settings issue: the `saveSettings` function only applied theme (dark class) but didn't apply primary color, compact mode, or sidebar position
+- Rewrote `apparence-settings.tsx`: added proper `applyTheme()`, `applyPrimaryColor()`, `applyCompactMode()`, `applySidebarPosition()` functions that modify CSS custom properties and data attributes on `document.documentElement`
+- Added 2 new color presets (Violet, Cyan) to the color picker
+- Added compact mode CSS rules to `globals.css`
+- Improved visual design of appearance settings with better selection indicators, checkmarks, and hover effects
+- Completely redesigned `donnees-settings.tsx` (System Data page): added section tabs (Overview, Students, Academic, Finance, System), data distribution progress bars, student/payment metric indicators, better stat cards with hover effects, current academic year banner, and a comprehensive system information panel
+- Added proper TypeScript interfaces (`StatItem`) for type safety
+- Fixed all TypeScript errors in modified files
+
+Stage Summary:
+- Key fix: `api-fetch.ts` now has automatic 401 → refresh → retry logic, solving token expiry issues for all settings CRUD operations
+- Key fix: Appearance settings now actually apply CSS custom properties (`--primary`, `--ring`, etc.) when changing colors
+- Key improvement: System data page completely redesigned with categorized stats, visual progress bars, and metric indicators
+- Files modified: `src/lib/api-fetch.ts`, `src/stores/auth.store.ts`, `src/components/ipve/settings/apparence-settings.tsx`, `src/components/ipve/settings/donnees-settings.tsx`, `src/app/globals.css`
