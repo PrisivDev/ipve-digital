@@ -23,6 +23,7 @@ import {
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/app-store';
 import { useAuthStore } from '@/stores/auth.store';
+import { apiFetchData } from '@/lib/api-fetch';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -74,20 +75,6 @@ const ROLE_LABELS: Record<string, string> = {
   PARENT: 'Parent',
   STUDENT: 'Étudiant',
 };
-
-/* ------------------------------------------------------------------ */
-/*  apiFetch helper                                                    */
-/* ------------------------------------------------------------------ */
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    ...options,
-  });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Erreur');
-  return json.data as T;
-}
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
@@ -147,7 +134,7 @@ export function UsersManagement() {
       if (roleFilter !== 'all') params.set('role', roleFilter);
       if (statusFilter !== 'all') params.set('status', statusFilter);
       const qs = params.toString();
-      const data = await apiFetch<UsersResponse>(`/api/settings/users${qs ? `?${qs}` : ''}`);
+      const data = await apiFetchData<UsersResponse>(`/api/settings/users${qs ? `?${qs}` : ''}`);
       setUsers(data.users);
       setStats(data.stats || { total: 0, active: 0, inactive: 0, twoFactorActive: 0 });
     } catch {
@@ -167,7 +154,7 @@ export function UsersManagement() {
     }
     try {
       setFormSaving(true);
-      await apiFetch('/api/settings/users', {
+      await apiFetchData('/api/settings/users', {
         method: 'POST',
         body: JSON.stringify(createForm),
       });
@@ -193,7 +180,7 @@ export function UsersManagement() {
     if (!selectedUser) return;
     try {
       setFormSaving(true);
-      await apiFetch(`/api/settings/users/${selectedUser.id}`, {
+      await apiFetchData(`/api/settings/users/${selectedUser.id}`, {
         method: 'PUT',
         body: JSON.stringify(editForm),
       });
@@ -228,7 +215,7 @@ export function UsersManagement() {
     }
     try {
       setFormSaving(true);
-      await apiFetch(`/api/settings/users/${selectedUser.id}`, {
+      await apiFetchData(`/api/settings/users/${selectedUser.id}`, {
         method: 'PUT',
         body: JSON.stringify({ action: 'resetPassword', newPassword: resetForm.newPassword }),
       });
@@ -252,7 +239,7 @@ export function UsersManagement() {
     try {
       setFormSaving(true);
       const action = selectedUser.isActive ? 'deactivate' : 'reactivate';
-      await apiFetch(`/api/settings/users/${selectedUser.id}`, {
+      await apiFetchData(`/api/settings/users/${selectedUser.id}`, {
         method: 'PUT',
         body: JSON.stringify({ action }),
       });

@@ -48,3 +48,29 @@ export async function apiFetchJson<T = unknown>(
 
   return res.json();
 }
+
+/**
+ * Convenience: authenticated fetch that unwraps `{ success, data, error }` responses.
+ * Automatically adds Content-Type for JSON bodies.
+ * Throws on !success with the server error message.
+ *
+ * This is the primary helper for CRUD operations in settings / admin components.
+ */
+export async function apiFetchData<T = unknown>(
+  url: string,
+  init?: RequestInit,
+): Promise<T> {
+  const headers = new Headers(init?.headers);
+  if (!headers.has('Content-Type') && init?.body && typeof init.body === 'string') {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const res = await apiFetch(url, { ...init, headers });
+  const json = await res.json();
+
+  if (!json.success) {
+    throw new Error(json.error || json.message || 'Erreur');
+  }
+
+  return json.data as T;
+}

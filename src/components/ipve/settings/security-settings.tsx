@@ -27,6 +27,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/app-store';
+import { apiFetchData } from '@/lib/api-fetch';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -138,20 +139,6 @@ const DEFAULT_POLICIES: SecurityPolicies = {
 };
 
 /* ------------------------------------------------------------------ */
-/*  apiFetch helper                                                    */
-/* ------------------------------------------------------------------ */
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    ...options,
-  });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Erreur');
-  return json.data as T;
-}
-
-/* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -184,7 +171,7 @@ export function SecuritySettings({ defaultTab = 'politiques' }: { defaultTab?: s
   const loadPolicies = useCallback(async () => {
     try {
       setPoliciesLoading(true);
-      const data = await apiFetch<SecurityPolicies>('/api/settings/security/policies');
+      const data = await apiFetchData<SecurityPolicies>('/api/settings/security/policies');
       const merged = { ...DEFAULT_POLICIES, ...data };
       setPolicies(merged);
       setOriginalPolicies(merged);
@@ -198,7 +185,7 @@ export function SecuritySettings({ defaultTab = 'politiques' }: { defaultTab?: s
   const loadPermissions = useCallback(async () => {
     try {
       setPermissionsLoading(true);
-      const data = await apiFetch<PermissionsData>('/api/settings/security/permissions');
+      const data = await apiFetchData<PermissionsData>('/api/settings/security/permissions');
       // Map matrix data into each role for display
       const enrichedRoles = data.roles.map((role) => {
         const moduleEntries = data.matrix.map((m) => ({
@@ -227,7 +214,7 @@ export function SecuritySettings({ defaultTab = 'politiques' }: { defaultTab?: s
       params.set('limit', '30');
       if (action !== 'all') params.set('action', action);
       if (resource !== 'all') params.set('resource', resource);
-      const data = await apiFetch<{ entries: Array<{ id: string; userId: string; action: string; resource: string; resourceId: string | null; ipAddress: string | null; userAgent: string | null; createdAt: string; user: { id: string; email: string; firstName: string; lastName: string } | null }>; pagination: { page: number; limit: number; total: number; totalPages: number } }>(`/api/settings/security/audit-log?${params}`);
+      const data = await apiFetchData<{ entries: Array<{ id: string; userId: string; action: string; resource: string; resourceId: string | null; ipAddress: string | null; userAgent: string | null; createdAt: string; user: { id: string; email: string; firstName: string; lastName: string } | null }>; pagination: { page: number; limit: number; total: number; totalPages: number } }>(`/api/settings/security/audit-log?${params}`);
       const entries: AuditLogEntry[] = data.entries.map((e) => ({
         ...e,
         userName: e.user ? `${e.user.firstName} ${e.user.lastName}` : 'Inconnu',
@@ -252,7 +239,7 @@ export function SecuritySettings({ defaultTab = 'politiques' }: { defaultTab?: s
   const handleSavePolicies = async () => {
     try {
       setPoliciesSaving(true);
-      await apiFetch('/api/settings/security/policies', {
+      await apiFetchData('/api/settings/security/policies', {
         method: 'PUT',
         body: JSON.stringify(policies),
       });

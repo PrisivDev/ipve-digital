@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAccessToken, isTokenBlacklisted } from '@/lib/auth';
+import { verifyAccessToken, isTokenBlacklisted, extractAccessToken } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { json } from '@/lib/json';
 
@@ -10,7 +10,8 @@ import { json } from '@/lib/json';
  */
 export async function POST(request: NextRequest) {
   try {
-    const accessToken = request.cookies.get('ipve_access_token')?.value;
+    // Try cookie first, then Authorization header
+    const accessToken = extractAccessToken(request);
 
     if (!accessToken) {
       return NextResponse.json(

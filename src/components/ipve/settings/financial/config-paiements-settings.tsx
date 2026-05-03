@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/app-store';
+import { apiFetchData } from '@/lib/api-fetch';
 
 interface PaymentConfig {
   defaultPaymentMethod: string;
@@ -20,13 +21,6 @@ interface PaymentConfig {
 }
 
 const DEFAULTS: PaymentConfig = { defaultPaymentMethod: 'CASH', latePenaltyPercent: 0, gracePeriodDays: 0 };
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json', ...options?.headers }, ...options });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Erreur');
-  return json.data as T;
-}
 
 const PAYMENT_METHODS = [
   { value: 'CASH', label: 'Espèces' },
@@ -49,7 +43,7 @@ export function ConfigPaiementsSettings() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await apiFetch<PaymentConfig>('/api/settings/financial/config');
+      const data = await apiFetchData<PaymentConfig>('/api/settings/financial/config');
       setForm({ ...DEFAULTS, ...data });
       setOriginal({ ...DEFAULTS, ...data });
     } catch { toast.error('Impossible de charger la configuration'); }
@@ -61,7 +55,7 @@ export function ConfigPaiementsSettings() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await apiFetch('/api/settings/financial/config', { method: 'PUT', body: JSON.stringify(form) });
+      await apiFetchData('/api/settings/financial/config', { method: 'PUT', body: JSON.stringify(form) });
       setOriginal({ ...form });
       toast.success('Configuration des paiements enregistrée');
     } catch (err: any) { toast.error(err.message || 'Erreur'); }

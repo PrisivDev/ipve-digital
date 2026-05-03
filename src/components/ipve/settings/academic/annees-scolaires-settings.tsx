@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/app-store';
+import { apiFetchData } from '@/lib/api-fetch';
 
 interface Period { id: string; name: string; startDate: string; endDate: string; weight: number; sortOrder: number; isCurrent: boolean; }
 
@@ -24,13 +25,6 @@ interface YearItem {
   id: string; name: string; startDate: string; endDate: string; isCurrent: boolean;
   periods: Period[];
   _count: { classes: number };
-}
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json', ...options?.headers }, ...options });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Erreur');
-  return json.data as T;
 }
 
 const PERIOD_TEMPLATES = [
@@ -52,7 +46,7 @@ export function AnneesScolairesSettings() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await apiFetch<YearItem[]>('/api/settings/academic/academic-years');
+      const data = await apiFetchData<YearItem[]>('/api/settings/academic/academic-years');
       setItems(data);
     } catch { toast.error('Impossible de charger les années scolaires'); }
     finally { setLoading(false); }
@@ -100,10 +94,10 @@ export function AnneesScolairesSettings() {
     try {
       setSaving(true);
       if (selected) {
-        await apiFetch(`/api/settings/academic/academic-years/${selected.id}`, { method: 'PUT', body: JSON.stringify({ name: form.name, startDate: form.startDate, endDate: form.endDate, isCurrent: form.isCurrent }) });
+        await apiFetchData(`/api/settings/academic/academic-years/${selected.id}`, { method: 'PUT', body: JSON.stringify({ name: form.name, startDate: form.startDate, endDate: form.endDate, isCurrent: form.isCurrent }) });
         toast.success('Année scolaire modifiée');
       } else {
-        await apiFetch('/api/settings/academic/academic-years', { method: 'POST', body: JSON.stringify(form) });
+        await apiFetchData('/api/settings/academic/academic-years', { method: 'POST', body: JSON.stringify(form) });
         toast.success('Année scolaire créée');
       }
       setDialogOpen(false); loadData();
@@ -114,7 +108,7 @@ export function AnneesScolairesSettings() {
   const handleSetCurrent = async (item: YearItem) => {
     if (item.isCurrent) return;
     try {
-      await apiFetch(`/api/settings/academic/academic-years/${item.id}`, { method: 'PUT', body: JSON.stringify({ isCurrent: true }) });
+      await apiFetchData(`/api/settings/academic/academic-years/${item.id}`, { method: 'PUT', body: JSON.stringify({ isCurrent: true }) });
       toast.success('Année scolaire définie comme en cours');
       loadData();
     } catch (err: any) { toast.error(err.message || 'Erreur'); }
@@ -122,7 +116,7 @@ export function AnneesScolairesSettings() {
 
   const handleDelete = async () => {
     if (!selected) return;
-    try { setSaving(true); await apiFetch(`/api/settings/academic/academic-years/${selected.id}`, { method: 'DELETE' }); toast.success('Année scolaire supprimée'); setDeleteOpen(false); loadData(); }
+    try { setSaving(true); await apiFetchData(`/api/settings/academic/academic-years/${selected.id}`, { method: 'DELETE' }); toast.success('Année scolaire supprimée'); setDeleteOpen(false); loadData(); }
     catch (err: any) { toast.error(err.message || 'Erreur'); }
     finally { setSaving(false); }
   };

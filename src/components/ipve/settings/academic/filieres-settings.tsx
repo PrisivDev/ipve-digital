@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/app-store';
+import { apiFetchData } from '@/lib/api-fetch';
 
 interface FiliereItem {
   id: string;
@@ -25,13 +26,6 @@ interface FiliereItem {
   durationYears: number;
   isActive: boolean;
   _count: { levels: number; students: number };
-}
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json', ...options?.headers }, ...options });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Erreur');
-  return json.data as T;
 }
 
 export function FilieresSettings() {
@@ -57,7 +51,7 @@ export function FilieresSettings() {
       setLoading(true);
       const params = new URLSearchParams();
       if (debouncedSearch) params.set('search', debouncedSearch);
-      const data = await apiFetch<FiliereItem[]>(`/api/settings/academic/filieres${params.toString() ? `?${params}` : ''}`);
+      const data = await apiFetchData<FiliereItem[]>(`/api/settings/academic/filieres${params.toString() ? `?${params}` : ''}`);
       setItems(data);
     } catch { toast.error('Impossible de charger les filières'); }
     finally { setLoading(false); }
@@ -82,10 +76,10 @@ export function FilieresSettings() {
     try {
       setSaving(true);
       if (selected) {
-        await apiFetch(`/api/settings/academic/filieres/${selected.id}`, { method: 'PUT', body: JSON.stringify(form) });
+        await apiFetchData(`/api/settings/academic/filieres/${selected.id}`, { method: 'PUT', body: JSON.stringify(form) });
         toast.success('Filière modifiée');
       } else {
-        await apiFetch('/api/settings/academic/filieres', { method: 'POST', body: JSON.stringify(form) });
+        await apiFetchData('/api/settings/academic/filieres', { method: 'POST', body: JSON.stringify(form) });
         toast.success('Filière créée');
       }
       setDialogOpen(false);
@@ -96,7 +90,7 @@ export function FilieresSettings() {
 
   const handleToggleActive = async (item: FiliereItem) => {
     try {
-      await apiFetch(`/api/settings/academic/filieres/${item.id}`, { method: 'PUT', body: JSON.stringify({ isActive: !item.isActive }) });
+      await apiFetchData(`/api/settings/academic/filieres/${item.id}`, { method: 'PUT', body: JSON.stringify({ isActive: !item.isActive }) });
       toast.success(item.isActive ? 'Filière désactivée' : 'Filière activée');
       loadData();
     } catch (err: any) { toast.error(err.message || 'Erreur'); }
@@ -106,7 +100,7 @@ export function FilieresSettings() {
     if (!selected) return;
     try {
       setSaving(true);
-      await apiFetch(`/api/settings/academic/filieres/${selected.id}`, { method: 'DELETE' });
+      await apiFetchData(`/api/settings/academic/filieres/${selected.id}`, { method: 'DELETE' });
       toast.success('Filière supprimée');
       setDeleteOpen(false);
       setSelected(null);

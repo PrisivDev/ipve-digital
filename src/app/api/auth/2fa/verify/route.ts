@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authService, AuthError, verifyAccessToken, isTokenBlacklisted, setAuthCookies } from '@/lib/auth';
+import { authService, AuthError, verifyAccessToken, isTokenBlacklisted, setAuthCookies, extractAccessToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const accessToken = request.cookies.get('ipve_access_token')?.value;
+    // Try cookie first, then Authorization header
+    const accessToken = extractAccessToken(request);
 
     if (!accessToken) {
       return NextResponse.json(
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * POST /api/auth/2fa/verify - Used during login flow when 2FA is required.
+ * PUT /api/auth/2fa/verify - Used during login flow when 2FA is required.
  * This variant accepts tempToken + userId + code to complete login.
  */
 export async function PUT(request: NextRequest) {

@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/app-store';
+import { apiFetchData } from '@/lib/api-fetch';
 
 interface Filiere { id: string; name: string; code: string; }
 
@@ -30,13 +31,6 @@ interface LevelItem {
   tuitionFee: number;
   filiere: Filiere;
   _count: { classes: number; students: number };
-}
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json', ...options?.headers }, ...options });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Erreur');
-  return json.data as T;
 }
 
 export function NiveauxSettings() {
@@ -60,7 +54,7 @@ export function NiveauxSettings() {
   }, [search]);
 
   const loadFilieres = useCallback(async () => {
-    const data = await apiFetch<Filiere[]>('/api/settings/academic/filieres?active=true');
+    const data = await apiFetchData<Filiere[]>('/api/settings/academic/filieres?active=true');
     setFilieres(data);
   }, []);
 
@@ -70,7 +64,7 @@ export function NiveauxSettings() {
       const params = new URLSearchParams();
       if (debouncedSearch) params.set('search', debouncedSearch);
       if (filiereFilter !== 'all') params.set('filiereId', filiereFilter);
-      const data = await apiFetch<LevelItem[]>(`/api/settings/academic/levels${params.toString() ? `?${params}` : ''}`);
+      const data = await apiFetchData<LevelItem[]>(`/api/settings/academic/levels${params.toString() ? `?${params}` : ''}`);
       setItems(data);
     } catch { toast.error('Impossible de charger les niveaux'); }
     finally { setLoading(false); }
@@ -96,10 +90,10 @@ export function NiveauxSettings() {
     try {
       setSaving(true);
       if (selected) {
-        await apiFetch(`/api/settings/academic/levels/${selected.id}`, { method: 'PUT', body: JSON.stringify(form) });
+        await apiFetchData(`/api/settings/academic/levels/${selected.id}`, { method: 'PUT', body: JSON.stringify(form) });
         toast.success('Niveau modifié');
       } else {
-        await apiFetch('/api/settings/academic/levels', { method: 'POST', body: JSON.stringify(form) });
+        await apiFetchData('/api/settings/academic/levels', { method: 'POST', body: JSON.stringify(form) });
         toast.success('Niveau créé');
       }
       setDialogOpen(false);
@@ -112,7 +106,7 @@ export function NiveauxSettings() {
     if (!selected) return;
     try {
       setSaving(true);
-      await apiFetch(`/api/settings/academic/levels/${selected.id}`, { method: 'DELETE' });
+      await apiFetchData(`/api/settings/academic/levels/${selected.id}`, { method: 'DELETE' });
       toast.success('Niveau supprimé');
       setDeleteOpen(false);
       setSelected(null);

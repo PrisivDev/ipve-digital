@@ -16,17 +16,11 @@ import {
 } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/app-store';
+import { apiFetchData } from '@/lib/api-fetch';
 
 interface SubjectItem {
   id: string; name: string; code: string; description: string | null; isActive: boolean;
   _count: { classSubjects: number };
-}
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json', ...options?.headers }, ...options });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Erreur');
-  return json.data as T;
 }
 
 export function MatieresSettings() {
@@ -49,7 +43,7 @@ export function MatieresSettings() {
       setLoading(true);
       const params = new URLSearchParams();
       if (debouncedSearch) params.set('search', debouncedSearch);
-      const data = await apiFetch<SubjectItem[]>(`/api/settings/academic/subjects${params.toString() ? `?${params}` : ''}`);
+      const data = await apiFetchData<SubjectItem[]>(`/api/settings/academic/subjects${params.toString() ? `?${params}` : ''}`);
       setItems(data);
     } catch { toast.error('Impossible de charger les matières'); }
     finally { setLoading(false); }
@@ -65,10 +59,10 @@ export function MatieresSettings() {
     try {
       setSaving(true);
       if (selected) {
-        await apiFetch(`/api/settings/academic/subjects/${selected.id}`, { method: 'PUT', body: JSON.stringify(form) });
+        await apiFetchData(`/api/settings/academic/subjects/${selected.id}`, { method: 'PUT', body: JSON.stringify(form) });
         toast.success('Matière modifiée');
       } else {
-        await apiFetch('/api/settings/academic/subjects', { method: 'POST', body: JSON.stringify(form) });
+        await apiFetchData('/api/settings/academic/subjects', { method: 'POST', body: JSON.stringify(form) });
         toast.success('Matière créée');
       }
       setDialogOpen(false); loadData();
@@ -78,7 +72,7 @@ export function MatieresSettings() {
 
   const handleToggle = async (item: SubjectItem) => {
     try {
-      await apiFetch(`/api/settings/academic/subjects/${item.id}`, { method: 'PUT', body: JSON.stringify({ isActive: !item.isActive }) });
+      await apiFetchData(`/api/settings/academic/subjects/${item.id}`, { method: 'PUT', body: JSON.stringify({ isActive: !item.isActive }) });
       toast.success(item.isActive ? 'Matière désactivée' : 'Matière activée');
       loadData();
     } catch (err: any) { toast.error(err.message || 'Erreur'); }
@@ -86,7 +80,7 @@ export function MatieresSettings() {
 
   const handleDelete = async () => {
     if (!selected) return;
-    try { setSaving(true); await apiFetch(`/api/settings/academic/subjects/${selected.id}`, { method: 'DELETE' }); toast.success('Matière supprimée'); setDeleteOpen(false); loadData(); }
+    try { setSaving(true); await apiFetchData(`/api/settings/academic/subjects/${selected.id}`, { method: 'DELETE' }); toast.success('Matière supprimée'); setDeleteOpen(false); loadData(); }
     catch (err: any) { toast.error(err.message || 'Erreur'); }
     finally { setSaving(false); }
   };

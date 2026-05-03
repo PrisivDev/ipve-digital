@@ -9,18 +9,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/app-store';
+import { apiFetchData } from '@/lib/api-fetch';
 
 interface SystemInfo {
   counts: Record<string, number>;
   currentYear: { id: string; name: string; startDate: string; endDate: string } | null;
   lastSync: string;
-}
-
-async function apiFetch<T>(url: string): Promise<T> {
-  const res = await fetch(url);
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Erreur');
-  return json.data as T;
 }
 
 export function DonneesSettings() {
@@ -32,7 +26,7 @@ export function DonneesSettings() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await apiFetch<SystemInfo>('/api/settings/system/info');
+      const data = await apiFetchData<SystemInfo>('/api/settings/system/info');
       setInfo(data);
     } catch { toast.error('Impossible de charger les informations système'); }
     finally { setLoading(false); }
@@ -43,7 +37,7 @@ export function DonneesSettings() {
   const handleExport = async () => {
     try {
       setExporting(true);
-      const data = await apiFetch<Record<string, unknown>>('/api/settings/system/export');
+      const data = await apiFetchData<Record<string, unknown>>('/api/settings/system/export');
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

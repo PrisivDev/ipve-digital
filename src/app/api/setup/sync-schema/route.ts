@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { extractAccessToken } from '@/lib/auth';
 
 /**
  * POST /api/setup/sync-schema
@@ -16,8 +17,8 @@ import { join } from 'path';
  * on semicolons inside dollar-quoted strings.
  */
 export async function POST(request: NextRequest) {
-  // Require auth cookie
-  const accessToken = request.cookies.get('ipve_access_token')?.value;
+  // Require auth — try cookie first, then Authorization header
+  const accessToken = extractAccessToken(request);
   if (!accessToken) {
     return NextResponse.json(
       { success: false, error: 'Authentification requise' },
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
 
 // GET /api/setup/sync-schema — Check which tables exist
 export async function GET(request: NextRequest) {
-  const accessToken = request.cookies.get('ipve_access_token')?.value;
+  const accessToken = extractAccessToken(request);
   if (!accessToken) {
     return NextResponse.json(
       { success: false, error: 'Authentification requise' },

@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/app-store';
+import { apiFetchData } from '@/lib/api-fetch';
 
 interface NotificationItem {
   id: string; userId: string | null; type: string; title: string; message: string;
@@ -37,13 +38,6 @@ const TYPE_COLORS: Record<string, string> = {
   GRADE_PUBLISHED: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
   ABSENCE_ALERT: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
 };
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json', ...options?.headers }, ...options });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Erreur');
-  return json.data as T;
-}
 
 export function NotificationsSettings() {
   const { setSettingsSection } = useAppStore();
@@ -68,7 +62,7 @@ export function NotificationsSettings() {
       if (readFilter === 'read') params.set('isRead', 'true');
       else if (readFilter === 'unread') params.set('isRead', 'false');
 
-      const data = await apiFetch<{ notifications: NotificationItem[]; pagination: { total: number; totalPages: number; page: number } }>(`/api/settings/notifications?${params}`);
+      const data = await apiFetchData<{ notifications: NotificationItem[]; pagination: { total: number; totalPages: number; page: number } }>(`/api/settings/notifications?${params}`);
       setItems(data.notifications);
       setTotal(data.pagination.total);
       setTotalPages(data.pagination.totalPages);
@@ -81,28 +75,28 @@ export function NotificationsSettings() {
 
   const handleToggleRead = async (item: NotificationItem) => {
     try {
-      await apiFetch(`/api/settings/notifications/${item.id}`, { method: 'PUT' });
+      await apiFetchData(`/api/settings/notifications/${item.id}`, { method: 'PUT' });
       loadData();
     } catch { toast.error('Erreur'); }
   };
 
   const handleMarkAllRead = async () => {
     try {
-      await apiFetch('/api/settings/notifications/all', { method: 'PUT' });
+      await apiFetchData('/api/settings/notifications/all', { method: 'PUT' });
       toast.success('Toutes les notifications marquées comme lues');
       loadData();
     } catch { toast.error('Erreur'); }
   };
 
   const handleDeleteSingle = async (id: string) => {
-    try { await apiFetch(`/api/settings/notifications/${id}`, { method: 'DELETE' }); loadData(); }
+    try { await apiFetchData(`/api/settings/notifications/${id}`, { method: 'DELETE' }); loadData(); }
     catch { toast.error('Erreur'); }
   };
 
   const handleBulkDelete = async () => {
     try {
       setBulkSaving(true);
-      await apiFetch(`/api/settings/notifications?ids=${Array.from(selectedIds).join(',')}`, { method: 'DELETE' });
+      await apiFetchData(`/api/settings/notifications?ids=${Array.from(selectedIds).join(',')}`, { method: 'DELETE' });
       toast.success(`${selectedIds.size} notification(s) supprimée(s)`);
       setSelectedIds(new Set());
       setBulkOpen(false);

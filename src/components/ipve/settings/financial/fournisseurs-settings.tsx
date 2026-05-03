@@ -16,18 +16,12 @@ import {
 } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/app-store';
+import { apiFetchData } from '@/lib/api-fetch';
 
 interface SupplierItem {
   id: string; name: string; phone: string | null; email: string | null;
   address: string | null; contactPerson: string | null; rib: string | null; isActive: boolean;
   _count: { expenses: number };
-}
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json', ...options?.headers }, ...options });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Erreur');
-  return json.data as T;
 }
 
 export function FournisseursSettings() {
@@ -50,7 +44,7 @@ export function FournisseursSettings() {
       setLoading(true);
       const params = new URLSearchParams();
       if (debouncedSearch) params.set('search', debouncedSearch);
-      const data = await apiFetch<SupplierItem[]>(`/api/settings/financial/suppliers${params.toString() ? `?${params}` : ''}`);
+      const data = await apiFetchData<SupplierItem[]>(`/api/settings/financial/suppliers${params.toString() ? `?${params}` : ''}`);
       setItems(data);
     } catch { toast.error('Impossible de charger les fournisseurs'); }
     finally { setLoading(false); }
@@ -66,10 +60,10 @@ export function FournisseursSettings() {
     try {
       setSaving(true);
       if (selected) {
-        await apiFetch(`/api/settings/financial/suppliers/${selected.id}`, { method: 'PUT', body: JSON.stringify(form) });
+        await apiFetchData(`/api/settings/financial/suppliers/${selected.id}`, { method: 'PUT', body: JSON.stringify(form) });
         toast.success('Fournisseur modifié');
       } else {
-        await apiFetch('/api/settings/financial/suppliers', { method: 'POST', body: JSON.stringify(form) });
+        await apiFetchData('/api/settings/financial/suppliers', { method: 'POST', body: JSON.stringify(form) });
         toast.success('Fournisseur créé');
       }
       setDialogOpen(false); loadData();
@@ -79,14 +73,14 @@ export function FournisseursSettings() {
 
   const handleToggle = async (item: SupplierItem) => {
     try {
-      await apiFetch(`/api/settings/financial/suppliers/${item.id}`, { method: 'PUT', body: JSON.stringify({ isActive: !item.isActive }) });
+      await apiFetchData(`/api/settings/financial/suppliers/${item.id}`, { method: 'PUT', body: JSON.stringify({ isActive: !item.isActive }) });
       loadData();
     } catch (err: any) { toast.error(err.message || 'Erreur'); }
   };
 
   const handleDelete = async () => {
     if (!selected) return;
-    try { setSaving(true); await apiFetch(`/api/settings/financial/suppliers/${selected.id}`, { method: 'DELETE' }); toast.success('Fournisseur supprimé'); setDeleteOpen(false); loadData(); }
+    try { setSaving(true); await apiFetchData(`/api/settings/financial/suppliers/${selected.id}`, { method: 'DELETE' }); toast.success('Fournisseur supprimé'); setDeleteOpen(false); loadData(); }
     catch (err: any) { toast.error(err.message || 'Erreur'); }
     finally { setSaving(false); }
   };

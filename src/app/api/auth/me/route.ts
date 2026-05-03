@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authService, AuthError, verifyAccessToken, isTokenBlacklisted } from '@/lib/auth';
+import { authService, AuthError, verifyAccessToken, isTokenBlacklisted, extractAccessToken } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { json } from '@/lib/json';
 
@@ -9,8 +9,7 @@ import { json } from '@/lib/json';
 export async function GET(request: NextRequest) {
   try {
     // Try cookie first, then Authorization header (for cross-origin contexts)
-    const accessToken = request.cookies.get('ipve_access_token')?.value
-      ?? request.headers.get('authorization')?.replace('Bearer ', '');
+    const accessToken = extractAccessToken(request);
 
     if (!accessToken) {
       return NextResponse.json(
@@ -64,7 +63,7 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const accessToken = request.cookies.get('ipve_access_token')?.value;
+    const accessToken = extractAccessToken(request);
 
     if (!accessToken) {
       return NextResponse.json(

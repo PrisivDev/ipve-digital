@@ -16,18 +16,12 @@ import {
 } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/app-store';
+import { apiFetchData } from '@/lib/api-fetch';
 
 interface CategoryItem {
   id: string; name: string; code: string | null; description: string | null;
   budgetLimit: number; isActive: boolean;
   _count: { expenses: number };
-}
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json', ...options?.headers }, ...options });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Erreur');
-  return json.data as T;
 }
 
 export function CategoriesDepensesSettings() {
@@ -50,7 +44,7 @@ export function CategoriesDepensesSettings() {
       setLoading(true);
       const params = new URLSearchParams();
       if (debouncedSearch) params.set('search', debouncedSearch);
-      const data = await apiFetch<CategoryItem[]>(`/api/settings/financial/expense-categories${params.toString() ? `?${params}` : ''}`);
+      const data = await apiFetchData<CategoryItem[]>(`/api/settings/financial/expense-categories${params.toString() ? `?${params}` : ''}`);
       setItems(data);
     } catch { toast.error('Impossible de charger les catégories'); }
     finally { setLoading(false); }
@@ -66,10 +60,10 @@ export function CategoriesDepensesSettings() {
     try {
       setSaving(true);
       if (selected) {
-        await apiFetch(`/api/settings/financial/expense-categories/${selected.id}`, { method: 'PUT', body: JSON.stringify(form) });
+        await apiFetchData(`/api/settings/financial/expense-categories/${selected.id}`, { method: 'PUT', body: JSON.stringify(form) });
         toast.success('Catégorie modifiée');
       } else {
-        await apiFetch('/api/settings/financial/expense-categories', { method: 'POST', body: JSON.stringify(form) });
+        await apiFetchData('/api/settings/financial/expense-categories', { method: 'POST', body: JSON.stringify(form) });
         toast.success('Catégorie créée');
       }
       setDialogOpen(false); loadData();
@@ -79,14 +73,14 @@ export function CategoriesDepensesSettings() {
 
   const handleToggle = async (item: CategoryItem) => {
     try {
-      await apiFetch(`/api/settings/financial/expense-categories/${item.id}`, { method: 'PUT', body: JSON.stringify({ isActive: !item.isActive }) });
+      await apiFetchData(`/api/settings/financial/expense-categories/${item.id}`, { method: 'PUT', body: JSON.stringify({ isActive: !item.isActive }) });
       loadData();
     } catch (err: any) { toast.error(err.message || 'Erreur'); }
   };
 
   const handleDelete = async () => {
     if (!selected) return;
-    try { setSaving(true); await apiFetch(`/api/settings/financial/expense-categories/${selected.id}`, { method: 'DELETE' }); toast.success('Catégorie supprimée'); setDeleteOpen(false); loadData(); }
+    try { setSaving(true); await apiFetchData(`/api/settings/financial/expense-categories/${selected.id}`, { method: 'DELETE' }); toast.success('Catégorie supprimée'); setDeleteOpen(false); loadData(); }
     catch (err: any) { toast.error(err.message || 'Erreur'); }
     finally { setSaving(false); }
   };

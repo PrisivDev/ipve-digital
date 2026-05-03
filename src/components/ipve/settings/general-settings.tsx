@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/app-store';
+import { apiFetchData, apiFetch } from '@/lib/api-fetch';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /* ------------------------------------------------------------------ */
@@ -59,20 +60,6 @@ const LOCALES = [
 ];
 
 /* ------------------------------------------------------------------ */
-/*  apiFetch helper                                                    */
-/* ------------------------------------------------------------------ */
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    ...options,
-  });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Erreur');
-  return json.data as T;
-}
-
-/* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -91,7 +78,7 @@ export function GeneralSettings() {
   const loadSettings = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await apiFetch<InstitutionSettings>('/api/settings/institution');
+      const data = await apiFetchData<InstitutionSettings>('/api/settings/institution');
       setForm({ ...DEFAULTS, ...data });
       setOriginal({ ...DEFAULTS, ...data });
     } catch {
@@ -112,7 +99,7 @@ export function GeneralSettings() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await apiFetch('/api/settings/institution', {
+      await apiFetchData('/api/settings/institution', {
         method: 'PUT',
         body: JSON.stringify(form),
       });
@@ -142,7 +129,7 @@ export function GeneralSettings() {
       setUploading(true);
       const formData = new FormData();
       formData.append('logo', file);
-      const res = await fetch('/api/settings/institution/logo', {
+      const res = await apiFetch('/api/settings/institution/logo', {
         method: 'POST',
         body: formData,
       });

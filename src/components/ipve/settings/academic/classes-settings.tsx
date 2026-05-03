@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/app-store';
+import { apiFetchData } from '@/lib/api-fetch';
 
 interface LevelOption { id: string; name: string; yearNumber: number; filiere: { id: string; name: string; code: string }; }
 interface YearOption { id: string; name: string; isCurrent: boolean; }
@@ -33,13 +34,6 @@ interface ClassItem {
   level: LevelOption;
   academicYear: { id: string; name: string; isCurrent: boolean };
   _count: { students: number; classSubjects: number };
-}
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json', ...options?.headers }, ...options });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Erreur');
-  return json.data as T;
 }
 
 export function ClassesSettings() {
@@ -65,12 +59,12 @@ export function ClassesSettings() {
   }, [search]);
 
   const loadLevels = useCallback(async () => {
-    const data = await apiFetch<LevelOption[]>('/api/settings/academic/levels');
+    const data = await apiFetchData<LevelOption[]>('/api/settings/academic/levels');
     setLevels(data);
   }, []);
 
   const loadYears = useCallback(async () => {
-    const data = await apiFetch<YearOption[]>('/api/settings/academic/academic-years');
+    const data = await apiFetchData<YearOption[]>('/api/settings/academic/academic-years');
     setYears(data);
   }, []);
 
@@ -81,7 +75,7 @@ export function ClassesSettings() {
       if (debouncedSearch) params.set('search', debouncedSearch);
       if (levelFilter !== 'all') params.set('levelId', levelFilter);
       if (yearFilter !== 'all') params.set('academicYearId', yearFilter);
-      const data = await apiFetch<ClassItem[]>(`/api/settings/academic/classes${params.toString() ? `?${params}` : ''}`);
+      const data = await apiFetchData<ClassItem[]>(`/api/settings/academic/classes${params.toString() ? `?${params}` : ''}`);
       setItems(data);
     } catch { toast.error('Impossible de charger les classes'); }
     finally { setLoading(false); }
@@ -107,10 +101,10 @@ export function ClassesSettings() {
     try {
       setSaving(true);
       if (selected) {
-        await apiFetch(`/api/settings/academic/classes/${selected.id}`, { method: 'PUT', body: JSON.stringify(form) });
+        await apiFetchData(`/api/settings/academic/classes/${selected.id}`, { method: 'PUT', body: JSON.stringify(form) });
         toast.success('Classe modifiée');
       } else {
-        await apiFetch('/api/settings/academic/classes', { method: 'POST', body: JSON.stringify(form) });
+        await apiFetchData('/api/settings/academic/classes', { method: 'POST', body: JSON.stringify(form) });
         toast.success('Classe créée');
       }
       setDialogOpen(false);
@@ -123,7 +117,7 @@ export function ClassesSettings() {
     if (!selected) return;
     try {
       setSaving(true);
-      await apiFetch(`/api/settings/academic/classes/${selected.id}`, { method: 'DELETE' });
+      await apiFetchData(`/api/settings/academic/classes/${selected.id}`, { method: 'DELETE' });
       toast.success('Classe supprimée');
       setDeleteOpen(false);
       loadData();

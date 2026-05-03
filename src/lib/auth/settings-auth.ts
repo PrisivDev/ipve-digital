@@ -2,10 +2,13 @@
  * IPVE — Settings Auth Helper
  * Shared admin-only JWT verification for all settings API routes.
  * Returns authenticated user info or a 401/403 NextResponse.
+ *
+ * Token extraction: Cookie first (ipve_access_token), then
+ * Authorization: Bearer <token> header (for cross-origin contexts).
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAccessToken, isTokenBlacklisted } from '@/lib/auth';
+import { verifyAccessToken, isTokenBlacklisted, extractAccessToken } from '@/lib/auth';
 import { db } from '@/lib/db';
 
 export interface SettingsAuthResult {
@@ -22,8 +25,8 @@ export interface SettingsAuthResult {
 export async function verifySettingsAdmin(
   request: NextRequest,
 ): Promise<SettingsAuthResult | NextResponse> {
-  // 1. Get access token from cookie
-  const accessToken = request.cookies.get('ipve_access_token')?.value;
+  // 1. Get access token from cookie OR Authorization header
+  const accessToken = extractAccessToken(request);
 
   if (!accessToken) {
     return NextResponse.json(
