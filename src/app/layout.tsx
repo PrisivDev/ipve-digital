@@ -18,8 +18,18 @@ export const metadata: Metadata = {
   title: "IPVE Digital - Gestion Scolaire",
   description: "Système de Gestion Scolaire - Institut Polytechnique Vase d'Élites",
   icons: {
-    icon: "/icon.svg",
-    apple: "/logo-ipve.png",
+    icon: [
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icon.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+    other: [
+      {
+        rel: "icon",
+        url: "https://ik.imagekit.io/damts929ip/IPVE/Logo.png?updatedAt=1776851379758",
+        type: "image/png",
+      },
+    ],
   },
 };
 
