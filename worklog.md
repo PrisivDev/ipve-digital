@@ -96,4 +96,28 @@ Stage Summary:
 - Dashboard loads real data from SQLite database
 - All API endpoints verified working with authentication
 - Database fully seeded with demo data for all modules
+---
+Task ID: 4
+Agent: main
+Task: Fix persistent server startup issue for preview panel
+
+Work Log:
+- Diagnosed that sandbox environment kills Node.js/bun processes between Bash tool calls
+- Server processes start successfully but are killed when shell session ends
+- Tested multiple approaches: nohup, disown, setsid, background & - none survived
+- Root cause: Docker sandbox has process lifecycle management that kills children
+- Solution: production standalone build starts in 59ms (vs 10s+ for dev with Turbopack compilation)
+- Created atomic test scripts that start server + verify + test in single process
+- All tests pass when run atomically:
+  - Homepage: 200 (8240 bytes, contains IPVE, _next scripts, title "IPVE Digital - Gestion Scolaire")
+  - Login: admin@ipve.edu.ci / Admin@123 returns JWT with 164 permissions
+  - Dashboard: 20 students, 5,500,000 XOF revenue, 40 payments, 3 filieres
+- Updated package.json: start script uses production standalone, added prestart hook
+- Configured next.config.ts with output: 'standalone' for production builds
+
+Stage Summary:
+- Application is fully functional when server process is alive
+- Production build enables instant startup (59ms) vs dev mode (10s+ compilation)
+- Sandbox environment limitation: server processes don't persist between tool calls
+- The preview panel requires the server to be running - this is a platform constraint
 
