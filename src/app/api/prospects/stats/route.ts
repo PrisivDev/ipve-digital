@@ -1,9 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prospectService } from '@/services/prospect.service';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 // GET /api/prospects/stats — get conversion stats
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     const stats = await prospectService.getConversionStats();
     return json(stats);

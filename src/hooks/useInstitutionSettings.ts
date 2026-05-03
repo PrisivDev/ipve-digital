@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api-fetch';
 
 // ─── Types ─────────────────────────────────────────────────
 
@@ -23,9 +24,7 @@ export function useInstitutionSettings() {
   return useQuery<InstitutionSettingsData>({
     queryKey: ['institution-settings'],
     queryFn: async () => {
-      const res = await fetch('/api/settings/institution', {
-        credentials: 'include',
-      });
+      const res = await apiFetch('/api/settings/institution');
       if (!res.ok) {
         // Return defaults on auth failure or not found
         return {

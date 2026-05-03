@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { paymentService } from '@/services/payment.service';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 // POST /api/payments/reminders — send payment reminders
 export async function POST(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     const body = await request.json();
 

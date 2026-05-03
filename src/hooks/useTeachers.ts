@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api-fetch';
 
 const BASE = '/api/teachers';
 
@@ -38,7 +39,7 @@ export function useTeachers(filters: TeacherFilters) {
   return useQuery<{ teachers: Teacher[] }>({
     queryKey: ['teachers', filters],
     queryFn: () =>
-      fetch(`${BASE}${qs ? `?${qs}` : ''}`).then((r) => {
+      apiFetch(`${BASE}${qs ? `?${qs}` : ''}`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -61,7 +62,7 @@ export function useCreateTeacher() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateTeacherPayload) =>
-      fetch(BASE, {
+      apiFetch(BASE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

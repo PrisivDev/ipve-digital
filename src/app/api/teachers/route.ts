@@ -3,9 +3,13 @@ import { NextRequest } from 'next/server';
 import { json } from '@/lib/json';
 import { hash } from 'bcryptjs';
 import { verifySettingsAdmin } from '@/lib/auth/settings-auth';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 // ─── GET /api/teachers?search=xxx&status=active|inactive ────────────
 export async function GET(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     const { searchParams } = request.nextUrl;
     const search = searchParams.get('search')?.trim() || '';

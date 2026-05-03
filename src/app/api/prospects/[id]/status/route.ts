@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { ProspectStatus } from '@/types/prospect.types';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 // PATCH /api/prospects/:id/status — update prospect status
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { id } = await params;
   const { prospectService } = await import('@/services/prospect.service');
   try {

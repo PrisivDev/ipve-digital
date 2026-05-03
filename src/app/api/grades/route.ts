@@ -1,8 +1,12 @@
 import { db } from '@/lib/db';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const subjectId = searchParams.get('subjectId') || '';

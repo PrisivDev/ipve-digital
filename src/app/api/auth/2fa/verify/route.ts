@@ -100,7 +100,7 @@ export async function PUT(request: NextRequest) {
       message: 'Connexion avec double authentification réussie',
     });
 
-    setAuthCookies(response.headers, result.accessToken, result.refreshToken);
+    setAuthCookies(response.headers, result.accessToken, result.refreshToken, request);
 
     return response;
   } catch (error) {

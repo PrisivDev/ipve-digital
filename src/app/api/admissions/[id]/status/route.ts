@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAccessToken } from '@/lib/auth';
 import type { AdmissionStatus } from '@prisma/client';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 // PUT /api/admissions/:id/status — update admission status
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { id } = await params;
   const { admissionService } = await import('@/services/admission.service');
 
   try {
-    // Verify auth — extract reviewer from access token cookie
-    const accessToken = request.cookies.get('ipve_access_token')?.value;
-    const payload = accessToken ? await verifyAccessToken(accessToken) : null;
-    const reviewerId = payload?.sub ?? null;
+    const reviewerId = auth.payload.userId ?? null;
 
     // Parse body
     const body = await request.json();

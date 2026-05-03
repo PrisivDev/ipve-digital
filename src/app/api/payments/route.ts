@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { paymentService } from '@/services/payment.service';
 import type { PaymentFilters, PaymentMethod, PaymentStatus } from '@/types/payment.types';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 // GET /api/payments — list payments with filters + pagination
 export async function GET(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { searchParams } = new URL(request.url);
 
   const filters: PaymentFilters = {
@@ -33,6 +37,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/payments — record a new payment
 export async function POST(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     const body = await request.json();
     const payment = await paymentService.recordPayment(body);

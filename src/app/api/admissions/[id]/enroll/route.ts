@@ -1,26 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAccessToken } from '@/lib/auth';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 // POST /api/admissions/:id/enroll — enroll an accepted admission
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { id } = await params;
   const { admissionService } = await import('@/services/admission.service');
 
   try {
-    // Verify auth — extract reviewer from access token cookie
-    const accessToken = request.cookies.get('ipve_access_token')?.value;
-    const payload = accessToken ? await verifyAccessToken(accessToken) : null;
-    if (!payload?.sub) {
-      return NextResponse.json(
-        { error: 'Authentification requise pour inscrire un candidat' },
-        { status: 401 },
-      );
-    }
-
     const admission = await admissionService.enroll(id);
     return json(admission);
   } catch (error: unknown) {

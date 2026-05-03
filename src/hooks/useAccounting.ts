@@ -19,6 +19,7 @@ import type {
   ChartOfAccountFlat,
   PaginatedResult,
 } from '@/types/accounting.types';
+import { apiFetchJson } from '@/lib/api-fetch';
 
 const BASE = '/api/accounting';
 
@@ -33,15 +34,6 @@ function buildParams(obj: Record<string, string | number | boolean | undefined>)
   }
   const qs = params.toString();
   return qs ? `?${qs}` : '';
-}
-
-async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init);
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: 'Erreur réseau' }));
-    return Promise.reject(err);
-  }
-  return res.json();
 }
 
 // ─── Queries ───────────────────────────────────────────────
@@ -59,14 +51,14 @@ export function useJournal(filters: JournalFilters) {
   });
   return useQuery<PaginatedResult<JournalEntryListItem>>({
     queryKey: ['accounting-journal', filters],
-    queryFn: () => apiFetch(`${BASE}/journal${qs}`),
+    queryFn: () => apiFetchJson(`${BASE}/journal${qs}`),
   });
 }
 
 export function useJournalEntry(id: string | null) {
   return useQuery<JournalEntryDetail>({
     queryKey: ['accounting-journal-entry', id],
-    queryFn: () => apiFetch(`${BASE}/journal/${id}`),
+    queryFn: () => apiFetchJson(`${BASE}/journal/${id}`),
     enabled: !!id,
   });
 }
@@ -78,7 +70,7 @@ export function useLedger(accountId: string | null, filters: LedgerFilters) {
   });
   return useQuery<LedgerResult>({
     queryKey: ['accounting-ledger', accountId, filters],
-    queryFn: () => apiFetch(`${BASE}/ledger?accountId=${accountId}${qs ? '&' + qs.slice(1) : ''}`),
+    queryFn: () => apiFetchJson(`${BASE}/ledger?accountId=${accountId}${qs ? '&' + qs.slice(1) : ''}`),
     enabled: !!accountId,
   });
 }
@@ -90,7 +82,7 @@ export function useTrialBalance(filters: TrialBalanceFilters) {
   });
   return useQuery<TrialBalance>({
     queryKey: ['accounting-trial-balance', filters],
-    queryFn: () => apiFetch(`${BASE}/trial-balance${qs}`),
+    queryFn: () => apiFetchJson(`${BASE}/trial-balance${qs}`),
   });
 }
 
@@ -101,14 +93,14 @@ export function useIncomeStatement(filters: IncomeStatementFilters) {
   });
   return useQuery<IncomeStatement>({
     queryKey: ['accounting-income-statement', filters],
-    queryFn: () => apiFetch(`${BASE}/income-statement${qs}`),
+    queryFn: () => apiFetchJson(`${BASE}/income-statement${qs}`),
   });
 }
 
 export function useBalanceSheet(date: string) {
   return useQuery<BalanceSheet>({
     queryKey: ['accounting-balance-sheet', date],
-    queryFn: () => apiFetch(`${BASE}/balance-sheet?date=${date}`),
+    queryFn: () => apiFetchJson(`${BASE}/balance-sheet?date=${date}`),
     enabled: !!date,
   });
 }
@@ -117,14 +109,14 @@ export function useChartOfAccounts(tree?: boolean, search?: string) {
   const qs = buildParams({ tree, search });
   return useQuery<ChartOfAccountItem[]>({
     queryKey: ['accounting-chart', tree, search],
-    queryFn: () => apiFetch(`${BASE}/chart-of-accounts${qs}`),
+    queryFn: () => apiFetchJson(`${BASE}/chart-of-accounts${qs}`),
   });
 }
 
 export function useAccountByNumber(accountNumber: string) {
   return useQuery<ChartOfAccountFlat>({
     queryKey: ['accounting-account-by-number', accountNumber],
-    queryFn: () => apiFetch(`${BASE}/chart-of-accounts?search=${encodeURIComponent(accountNumber)}`),
+    queryFn: () => apiFetchJson(`${BASE}/chart-of-accounts?search=${encodeURIComponent(accountNumber)}`),
     enabled: !!accountNumber,
     select: (data) => {
       if (Array.isArray(data) && data.length > 0) {
@@ -141,7 +133,7 @@ export function useCreateJournalEntry() {
   const qc = useQueryClient();
   return useMutation<JournalEntryDetail, Error, CreateJournalEntryDto>({
     mutationFn: (data) =>
-      apiFetch(`${BASE}/journal`, {
+      apiFetchJson(`${BASE}/journal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -160,7 +152,7 @@ export function useValidateEntry() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      apiFetch(`${BASE}/journal/${id}`, {
+      apiFetchJson(`${BASE}/journal/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'validate' }),
@@ -176,7 +168,7 @@ export function useDeleteEntry() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      apiFetch(`${BASE}/journal/${id}`, { method: 'DELETE' }),
+      apiFetchJson(`${BASE}/journal/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['accounting-journal'] });
       qc.invalidateQueries({ queryKey: ['accounting-ledger'] });
@@ -189,7 +181,7 @@ export function useCreateAccount() {
   const qc = useQueryClient();
   return useMutation<ChartOfAccountFlat, Error, CreateChartOfAccountDto>({
     mutationFn: (data) =>
-      apiFetch(`${BASE}/chart-of-accounts`, {
+      apiFetchJson(`${BASE}/chart-of-accounts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -213,7 +205,7 @@ export function useAccountSearch(query: string, debounceMs = 300) {
   return useQuery<ChartOfAccountFlat[]>({
     queryKey: ['account-search', debounced],
     queryFn: () =>
-      apiFetch<ChartOfAccountFlat[]>(
+      apiFetchJson<ChartOfAccountFlat[]>(
         `${BASE}/chart-of-accounts?search=${encodeURIComponent(debounced)}`
       ),
     enabled: debounced.length >= 1,

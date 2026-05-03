@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api-fetch';
 import type {
   ProspectFilters,
   ProspectStatus,
@@ -27,7 +28,7 @@ export function useProspects(filters: ProspectFilters) {
   return useQuery({
     queryKey: ['prospects', filters],
     queryFn: () =>
-      fetch(`${BASE}${qs ? `?${qs}` : ''}`).then((r) => {
+      apiFetch(`${BASE}${qs ? `?${qs}` : ''}`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -38,7 +39,7 @@ export function useProspect(id: string | null) {
   return useQuery({
     queryKey: ['prospect', id],
     queryFn: () =>
-      fetch(`${BASE}/${id}`).then((r) => {
+      apiFetch(`${BASE}/${id}`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -50,7 +51,7 @@ export function useProspectInteractions(prospectId: string | null) {
   return useQuery({
     queryKey: ['prospect-interactions', prospectId],
     queryFn: () =>
-      fetch(`${BASE}/${prospectId}/interactions`).then((r) => {
+      apiFetch(`${BASE}/${prospectId}/interactions`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -69,7 +70,7 @@ export function useKanbanData(filters?: Omit<ProspectFilters, 'page' | 'limit' |
   return useQuery({
     queryKey: ['prospects-kanban', filters],
     queryFn: () =>
-      fetch(`${BASE}/kanban${qs ? `?${qs}` : ''}`).then((r) => {
+      apiFetch(`${BASE}/kanban${qs ? `?${qs}` : ''}`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -80,7 +81,7 @@ export function useConversionStats() {
   return useQuery({
     queryKey: ['prospects-stats'],
     queryFn: () =>
-      fetch(`${BASE}/stats`).then((r) => {
+      apiFetch(`${BASE}/stats`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -95,7 +96,7 @@ export function useCreateProspect() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateProspectDto) =>
-      fetch(BASE, {
+      apiFetch(BASE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -115,7 +116,7 @@ export function useUpdateProspect() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateProspectDto }) =>
-      fetch(`${BASE}/${id}`, {
+      apiFetch(`${BASE}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -143,7 +144,7 @@ export function useUpdateProspectStatus() {
       status: ProspectStatus;
       notes?: string;
     }) =>
-      fetch(`${BASE}/${id}/status`, {
+      apiFetch(`${BASE}/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, notes }),
@@ -175,7 +176,7 @@ export function useConvertProspect() {
         scholarshipPct?: number;
       };
     }) =>
-      fetch(`${BASE}/${id}/convert`, {
+      apiFetch(`${BASE}/${id}/convert`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(studentData),
@@ -196,7 +197,7 @@ export function useDeleteProspect() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      fetch(`${BASE}/${id}`, { method: 'DELETE' }).then((r) => {
+      apiFetch(`${BASE}/${id}`, { method: 'DELETE' }).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -218,7 +219,7 @@ export function useAddInteraction() {
       prospectId: string;
       data: AddInteractionDto;
     }) =>
-      fetch(`${BASE}/${prospectId}/interactions`, {
+      apiFetch(`${BASE}/${prospectId}/interactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

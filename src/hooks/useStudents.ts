@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api-fetch';
 
 const BASE = '/api/students';
 
@@ -39,7 +40,7 @@ export function useStudents(filters: StudentFilters) {
   return useQuery<PaginatedResponse<any>>({
     queryKey: ['students', filters],
     queryFn: () =>
-      fetch(`${BASE}${qs ? `?${qs}` : ''}`).then((r) => {
+      apiFetch(`${BASE}${qs ? `?${qs}` : ''}`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -51,7 +52,7 @@ export function useStudent(id: string | null) {
   return useQuery<any>({
     queryKey: ['student', id],
     queryFn: () =>
-      fetch(`${BASE}/${id}`).then((r) => {
+      apiFetch(`${BASE}/${id}`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -64,7 +65,7 @@ export function useStudentFinancialSummary(id: string | null) {
   return useQuery<any>({
     queryKey: ['student-financial', id],
     queryFn: () =>
-      fetch(`${BASE}/${id}/financial-summary`).then((r) => {
+      apiFetch(`${BASE}/${id}/financial-summary`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -84,7 +85,7 @@ export function useStudentGrades(
   return useQuery<any>({
     queryKey: ['student-grades', id, academicYearId, periodId],
     queryFn: () =>
-      fetch(`${BASE}/${id}/grades?${params}`).then((r) => {
+      apiFetch(`${BASE}/${id}/grades?${params}`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -97,7 +98,7 @@ export function useStudentAttendance(id: string | null) {
   return useQuery<any>({
     queryKey: ['student-attendance', id],
     queryFn: () =>
-      fetch(`${BASE}/${id}/attendance`).then((r) => {
+      apiFetch(`${BASE}/${id}/attendance`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -110,7 +111,7 @@ export function useCreateStudent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: any) =>
-      fetch(BASE, {
+      apiFetch(BASE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -129,7 +130,7 @@ export function useUpdateStudent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
-      fetch(`${BASE}/${id}`, {
+      apiFetch(`${BASE}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -149,7 +150,7 @@ export function useDeleteStudent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      fetch(`${BASE}/${id}`, { method: 'DELETE' }).then((r) => r.json()),
+      apiFetch(`${BASE}/${id}`, { method: 'DELETE' }).then((r) => r.json()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['students'] });
     },
@@ -161,7 +162,7 @@ export function useFilieres() {
   return useQuery<{ id: string; name: string; code: string }[]>({
     queryKey: ['filieres'],
     queryFn: () =>
-      fetch('/api/references')
+      apiFetch('/api/references')
         .then((r) => {
           if (!r.ok) throw new Error('Erreur chargement filieres');
           return r.json();
@@ -177,7 +178,7 @@ export function useLevels(filiereId?: string) {
   return useQuery<{ id: string; name: string; filiereId: string }[]>({
     queryKey: ['levels', filiereId],
     queryFn: () =>
-      fetch(`/api/references${filiereId ? `?filiereId=${filiereId}` : ''}`)
+      apiFetch(`/api/references${filiereId ? `?filiereId=${filiereId}` : ''}`)
         .then((r) => {
           if (!r.ok) throw new Error('Erreur chargement niveaux');
           return r.json();
@@ -194,7 +195,7 @@ export function useClasses(levelId?: string) {
   return useQuery<{ id: string; name: string; levelId: string }[]>({
     queryKey: ['classes', levelId],
     queryFn: () =>
-      fetch(`/api/references${levelId ? `?levelId=${levelId}` : ''}`)
+      apiFetch(`/api/references${levelId ? `?levelId=${levelId}` : ''}`)
         .then((r) => {
           if (!r.ok) throw new Error('Erreur chargement classes');
           return r.json();

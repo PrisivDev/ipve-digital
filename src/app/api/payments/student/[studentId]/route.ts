@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 // GET /api/payments/student/[studentId] — get student payment status
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ studentId: string }> },
 ) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { studentId } = await params;
   const { paymentService } = await import('@/services/payment.service');
 

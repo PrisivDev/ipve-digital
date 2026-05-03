@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       message: 'Connexion réussie',
     });
 
-    setAuthCookies(response.headers, result.accessToken, result.refreshToken);
+    setAuthCookies(response.headers, result.accessToken, result.refreshToken, request);
 
     return response;
   } catch (error) {

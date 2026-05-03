@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { studentCardService } from '@/services/student-card.service';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 // POST /api/student-cards/[id]/renew — renew a LOST/EXPIRED card
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { id } = await params;
 
   try {

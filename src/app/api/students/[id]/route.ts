@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { id } = await params;
   const { studentService } = await import('@/services/student.service');
   try {
@@ -17,6 +21,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { id } = await params;
   const { studentService } = await import('@/services/student.service');
   try {
@@ -33,6 +40,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { id } = await params;
   const { studentService } = await import('@/services/student.service');
   try {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api-fetch';
 
 const BASE = '/api/employees';
 
@@ -71,7 +72,7 @@ export function useEmployees(filters: EmployeeFilters) {
   return useQuery<{ success: boolean; data: PaginatedEmployees }>({
     queryKey: ['employees', filters],
     queryFn: () =>
-      fetch(`${BASE}${qs ? `?${qs}` : ''}`).then((r) => {
+      apiFetch(`${BASE}${qs ? `?${qs}` : ''}`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -84,7 +85,7 @@ export function useEmployee(id: string | null) {
   return useQuery<{ success: boolean; data: EmployeeDetail }>({
     queryKey: ['employee', id],
     queryFn: () =>
-      fetch(`${BASE}/${id}`).then((r) => {
+      apiFetch(`${BASE}/${id}`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -98,7 +99,7 @@ export function useCreateEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: any) =>
-      fetch(BASE, {
+      apiFetch(BASE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -117,7 +118,7 @@ export function useUpdateEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
-      fetch(`${BASE}/${id}`, {
+      apiFetch(`${BASE}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -137,7 +138,7 @@ export function useDeactivateEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      fetch(`${BASE}/${id}`, { method: 'DELETE' }).then((r) => {
+      apiFetch(`${BASE}/${id}`, { method: 'DELETE' }).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),

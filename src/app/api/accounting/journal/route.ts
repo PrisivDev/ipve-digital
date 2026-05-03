@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { accountingService } from '@/services/accounting.service';
 import type { JournalFilters, CreateJournalEntryDto } from '@/types/accounting.types';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 export async function GET(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
 
@@ -31,6 +35,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     const body = await request.json();
 

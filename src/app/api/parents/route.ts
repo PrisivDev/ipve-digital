@@ -1,9 +1,13 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 // GET /api/parents — list unique parents grouped by phone with search + pagination
 export async function GET(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { searchParams } = new URL(request.url);
   const search = searchParams.get('search') || undefined;
   const page = parseInt(searchParams.get('page') || '1');
@@ -96,6 +100,9 @@ export async function GET(request: NextRequest) {
 
 // PUT /api/parents — update parent info across ALL students sharing the same parentPhone
 export async function PUT(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     const body = await request.json();
     const { parentPhone, parentName, parentEmail, emergencyContact } = body;

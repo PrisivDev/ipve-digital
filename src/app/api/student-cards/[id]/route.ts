@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { studentCardService } from '@/services/student-card.service';
 import type { StudentCardStatus } from '@prisma/client';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 // GET /api/student-cards/[id] — single card with student details
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { id } = await params;
 
   try {
@@ -29,6 +33,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { id } = await params;
 
   try {

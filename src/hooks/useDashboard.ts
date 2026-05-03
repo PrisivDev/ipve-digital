@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api-fetch';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -34,7 +35,7 @@ export function useDashboard() {
   return useQuery<DashboardApiData>({
     queryKey: ['dashboard'],
     queryFn: () =>
-      fetch('/api/dashboard').then((r) => {
+      apiFetch('/api/dashboard').then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),

@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api-fetch';
 
 const BASE = '/api/admissions';
 
@@ -47,7 +48,7 @@ export function useAdmissions(filters: AdmissionFilters) {
   return useQuery<PaginatedAdmissionResponse>({
     queryKey: ['admissions', filters],
     queryFn: () =>
-      fetch(`${BASE}${qs ? `?${qs}` : ''}`).then((r) => {
+      apiFetch(`${BASE}${qs ? `?${qs}` : ''}`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -59,7 +60,7 @@ export function useAdmission(id: string | null) {
   return useQuery<any>({
     queryKey: ['admission', id],
     queryFn: () =>
-      fetch(`${BASE}/${id}`).then((r) => {
+      apiFetch(`${BASE}/${id}`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -72,7 +73,7 @@ export function useCreateAdmission() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: any) =>
-      fetch(BASE, {
+      apiFetch(BASE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -91,7 +92,7 @@ export function useUpdateAdmission() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
-      fetch(`${BASE}/${id}`, {
+      apiFetch(`${BASE}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -111,7 +112,7 @@ export function useDeleteAdmission() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      fetch(`${BASE}/${id}`, { method: 'DELETE' }).then((r) => r.json()),
+      apiFetch(`${BASE}/${id}`, { method: 'DELETE' }).then((r) => r.json()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admissions'] });
     },
@@ -123,7 +124,7 @@ export function useUpdateAdmissionStatus() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, status, decisionNote }: { id: string; status: string; decisionNote?: string }) =>
-      fetch(`${BASE}/${id}/status`, {
+      apiFetch(`${BASE}/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, decisionNote }),
@@ -144,7 +145,7 @@ export function useEnrollAdmission() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data?: any }) =>
-      fetch(`${BASE}/${id}/enroll`, {
+      apiFetch(`${BASE}/${id}/enroll`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data ?? {}),
@@ -165,7 +166,7 @@ export function useFilieres() {
   return useQuery<{ id: string; name: string; code: string }[]>({
     queryKey: ['filieres'],
     queryFn: () =>
-      fetch('/api/references')
+      apiFetch('/api/references')
         .then((r) => {
           if (!r.ok) throw new Error('Erreur chargement filieres');
           return r.json();
@@ -181,7 +182,7 @@ export function useLevels(filiereId?: string) {
   return useQuery<{ id: string; name: string; filiereId: string }[]>({
     queryKey: ['levels', filiereId],
     queryFn: () =>
-      fetch(`/api/references${filiereId ? `?filiereId=${filiereId}` : ''}`)
+      apiFetch(`/api/references${filiereId ? `?filiereId=${filiereId}` : ''}`)
         .then((r) => {
           if (!r.ok) throw new Error('Erreur chargement niveaux');
           return r.json();
@@ -198,7 +199,7 @@ export function useClasses(levelId?: string) {
   return useQuery<{ id: string; name: string; levelId: string }[]>({
     queryKey: ['classes', levelId],
     queryFn: () =>
-      fetch(`/api/references${levelId ? `?levelId=${levelId}` : ''}`)
+      apiFetch(`/api/references${levelId ? `?levelId=${levelId}` : ''}`)
         .then((r) => {
           if (!r.ok) throw new Error('Erreur chargement classes');
           return r.json();

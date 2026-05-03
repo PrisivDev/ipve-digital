@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api-fetch';
 
 const BASE = '/api/student-cards';
 
@@ -42,7 +43,7 @@ export function useStudentCards(filters: StudentCardFilters) {
   return useQuery<PaginatedStudentCardResponse>({
     queryKey: ['student-cards', filters],
     queryFn: () =>
-      fetch(`${BASE}${qs ? `?${qs}` : ''}`).then((r) => {
+      apiFetch(`${BASE}${qs ? `?${qs}` : ''}`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -54,7 +55,7 @@ export function useStudentCard(id: string | null) {
   return useQuery<any>({
     queryKey: ['student-card', id],
     queryFn: () =>
-      fetch(`${BASE}/${id}`).then((r) => {
+      apiFetch(`${BASE}/${id}`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -67,7 +68,7 @@ export function useGenerateStudentCard() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: { studentId: string; expiryDate?: string }) =>
-      fetch(BASE, {
+      apiFetch(BASE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -90,7 +91,7 @@ export function useUpdateStudentCard() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
-      fetch(`${BASE}/${id}`, {
+      apiFetch(`${BASE}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -110,7 +111,7 @@ export function useRecordCardPrint() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      fetch(`${BASE}/${id}/print`, {
+      apiFetch(`${BASE}/${id}/print`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       }).then((r) => {
@@ -129,7 +130,7 @@ export function useRenewStudentCard() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data?: any }) =>
-      fetch(`${BASE}/${id}/renew`, {
+      apiFetch(`${BASE}/${id}/renew`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data ?? {}),

@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { accountingService } from '@/services/accounting.service';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     const { id } = await params;
     const result = await accountingService.getJournalEntryById(id);
@@ -21,6 +25,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -42,6 +49,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     const { id } = await params;
     await accountingService.deleteEntry(id);

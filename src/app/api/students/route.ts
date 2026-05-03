@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { studentService } from '@/services/student.service';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 // GET /api/students — list with filters + pagination
 export async function GET(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { searchParams } = new URL(request.url);
   const filters = {
     search: searchParams.get('search') || undefined,
@@ -30,6 +34,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/students — create student
 export async function POST(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     const body = await request.json();
     const student = await studentService.create(body);

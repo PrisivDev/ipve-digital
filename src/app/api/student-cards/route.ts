@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { studentCardService } from '@/services/student-card.service';
 import type { StudentCardStatus } from '@prisma/client';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 // GET /api/student-cards — list with filters + pagination
 export async function GET(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { searchParams } = new URL(request.url);
 
   const filters = {
@@ -29,6 +33,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/student-cards — generate a new card
 export async function POST(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     const body = await request.json();
     const { studentId, expiryDate } = body;

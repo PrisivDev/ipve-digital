@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api-fetch';
 
 const BASE = '/api/parents';
 
@@ -57,7 +58,7 @@ export function useParents(filters: ParentsFilters) {
   return useQuery<ParentsResponse>({
     queryKey: ['parents', filters],
     queryFn: () =>
-      fetch(`${BASE}${qs ? `?${qs}` : ''}`).then((r) => {
+      apiFetch(`${BASE}${qs ? `?${qs}` : ''}`).then((r) => {
         if (!r.ok) return r.json().then((e) => Promise.reject(e));
         return r.json();
       }),
@@ -71,7 +72,7 @@ export function useUpdateParent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: UpdateParentPayload) =>
-      fetch(BASE, {
+      apiFetch(BASE, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

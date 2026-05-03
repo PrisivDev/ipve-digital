@@ -19,6 +19,7 @@ import type {
   PaginatedResult,
 } from '@/types/payment.types';
 import { PAYMENT_METHOD_LABELS, getPaymentMethodIcon } from '@/types/payment.types';
+import { apiFetchJson } from '@/lib/api-fetch';
 
 const PAYMENTS_BASE = '/api/payments';
 const PLANS_BASE = '/api/payment-plans';
@@ -34,15 +35,6 @@ function buildParams(obj: Record<string, string | number | boolean | undefined>)
   }
   const qs = params.toString();
   return qs ? `?${qs}` : '';
-}
-
-async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init);
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: 'Erreur réseau' }));
-    return Promise.reject(err);
-  }
-  return res.json();
 }
 
 // ─── Queries ───────────────────────────────────────────────
@@ -61,14 +53,14 @@ export function usePayments(filters: PaymentFilters) {
   });
   return useQuery<PaginatedResult<PaymentListItem>>({
     queryKey: ['payments', filters],
-    queryFn: () => apiFetch(`${PAYMENTS_BASE}${qs}`),
+    queryFn: () => apiFetchJson(`${PAYMENTS_BASE}${qs}`),
   });
 }
 
 export function usePayment(id: string | null) {
   return useQuery<PaymentDetail>({
     queryKey: ['payment', id],
-    queryFn: () => apiFetch(`${PAYMENTS_BASE}/${id}`),
+    queryFn: () => apiFetchJson(`${PAYMENTS_BASE}/${id}`),
     enabled: !!id,
   });
 }
@@ -81,7 +73,7 @@ export function useStudentPaymentStatus(
   return useQuery<StudentPaymentStatus>({
     queryKey: ['student-payment-status', studentId, academicYearId],
     queryFn: () =>
-      apiFetch(`${PAYMENTS_BASE}/student/${studentId}${qs}`),
+      apiFetchJson(`${PAYMENTS_BASE}/student/${studentId}${qs}`),
     enabled: !!studentId,
   });
 }
@@ -99,14 +91,14 @@ export function useUnpaidStudents(filters: UnpaidFilters) {
   });
   return useQuery<PaginatedResult<UnpaidSummary>>({
     queryKey: ['unpaid-students', filters],
-    queryFn: () => apiFetch(`${PAYMENTS_BASE}/unpaid${qs}`),
+    queryFn: () => apiFetchJson(`${PAYMENTS_BASE}/unpaid${qs}`),
   });
 }
 
 export function usePaymentDashboard() {
   return useQuery<PaymentDashboardData>({
     queryKey: ['payment-dashboard'],
-    queryFn: () => apiFetch(`${PAYMENTS_BASE}/dashboard`),
+    queryFn: () => apiFetchJson(`${PAYMENTS_BASE}/dashboard`),
     staleTime: 60_000, // 1 min
     refetchInterval: 5 * 60 * 1000, // 5 min instead of 60s
   });
@@ -116,14 +108,14 @@ export function usePaymentPlans(academicYearId?: string) {
   const qs = academicYearId ? `?academicYearId=${academicYearId}` : '';
   return useQuery<PaymentPlanListItem[]>({
     queryKey: ['payment-plans', academicYearId],
-    queryFn: () => apiFetch(`${PLANS_BASE}${qs}`),
+    queryFn: () => apiFetchJson(`${PLANS_BASE}${qs}`),
   });
 }
 
 export function usePaymentPlan(id: string | null) {
   return useQuery<PaymentPlanDetail>({
     queryKey: ['payment-plan', id],
-    queryFn: () => apiFetch(`${PLANS_BASE}/${id}`),
+    queryFn: () => apiFetchJson(`${PLANS_BASE}/${id}`),
     enabled: !!id,
   });
 }
@@ -134,7 +126,7 @@ export function useRecordPayment() {
   const qc = useQueryClient();
   return useMutation<PaymentDetail, Error, RecordPaymentDto>({
     mutationFn: (data) =>
-      apiFetch(PAYMENTS_BASE, {
+      apiFetchJson(PAYMENTS_BASE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -152,7 +144,7 @@ export function useCancelPayment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      apiFetch(`${PAYMENTS_BASE}/${id}`, { method: 'DELETE' }),
+      apiFetchJson(`${PAYMENTS_BASE}/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['payments'] });
       qc.invalidateQueries({ queryKey: ['payment-dashboard'] });
@@ -164,7 +156,7 @@ export function useSendReminders() {
   const qc = useQueryClient();
   return useMutation<ReminderResult, Error, SendReminderDto>({
     mutationFn: (data) =>
-      apiFetch(`${PAYMENTS_BASE}/reminders`, {
+      apiFetchJson(`${PAYMENTS_BASE}/reminders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -179,7 +171,7 @@ export function useCreatePaymentPlan() {
   const qc = useQueryClient();
   return useMutation<PaymentPlanDetail, Error, CreatePaymentPlanDto>({
     mutationFn: (data) =>
-      apiFetch(PLANS_BASE, {
+      apiFetchJson(PLANS_BASE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -212,7 +204,7 @@ export function useStudentSearch(search: string) {
   return useQuery<{ data: { id: string; studentName: string; studentNumber: string; filiereName: string | null }[] }>({
     queryKey: ['student-search', search],
     queryFn: () =>
-      apiFetch(`/api/students?search=${encodeURIComponent(search)}&limit=10`),
+      apiFetchJson(`/api/students?search=${encodeURIComponent(search)}&limit=10`),
     enabled: search.length >= 2,
     staleTime: 10_000,
   });

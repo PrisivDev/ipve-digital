@@ -250,9 +250,17 @@ export function setAuthCookies(
   headers: Headers,
   accessToken: string,
   refreshToken: string,
+  request?: Request,
 ): void {
   const accessMaxAge = Math.floor(ACCESS_TOKEN_EXPIRY_MS / 1000);
   const refreshMaxAge = Math.floor(REFRESH_TOKEN_EXPIRY_MS / 1000);
+
+  // Detect HTTPS via forwarded proto (Caddy / reverse proxy)
+  const isSecure = request?.headers.get('x-forwarded-proto') === 'https';
+
+  // SameSite=Lax works on both HTTP and HTTPS.
+  // Only use SameSite=None + Secure when we know we're behind HTTPS.
+  const sameSite = isSecure ? 'None' : 'Lax';
 
   headers.append(
     'Set-Cookie',
@@ -260,9 +268,10 @@ export function setAuthCookies(
       `${COOKIE_ACCESS_TOKEN}=${accessToken}`,
       `Path=/`,
       `HttpOnly`,
-      `SameSite=None`,
+      sameSite,
+      isSecure ? 'Secure' : '',
       `Max-Age=${accessMaxAge}`,
-    ].join('; '),
+    ].filter(Boolean).join('; '),
   );
 
   headers.append(
@@ -271,9 +280,10 @@ export function setAuthCookies(
       `${COOKIE_REFRESH_TOKEN}=${refreshToken}`,
       `Path=/`,
       `HttpOnly`,
-      `SameSite=None`,
+      sameSite,
+      isSecure ? 'Secure' : '',
       `Max-Age=${refreshMaxAge}`,
-    ].join('; '),
+    ].filter(Boolean).join('; '),
   );
 }
 
@@ -284,7 +294,7 @@ export function clearAuthCookies(headers: Headers): void {
       `${COOKIE_ACCESS_TOKEN}=`,
       `Path=/`,
       `HttpOnly`,
-      `SameSite=None`,
+      `SameSite=Lax`,
       `Max-Age=0`,
     ].join('; '),
   );
@@ -295,7 +305,7 @@ export function clearAuthCookies(headers: Headers): void {
       `${COOKIE_REFRESH_TOKEN}=`,
       `Path=/`,
       `HttpOnly`,
-      `SameSite=None`,
+      `SameSite=Lax`,
       `Max-Age=0`,
     ].join('; '),
   );

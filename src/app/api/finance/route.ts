@@ -1,8 +1,12 @@
 import { db } from '@/lib/db';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     // Sequential queries to avoid Supabase connection pool exhaustion (max 3 connections)
     const totalRevenue = await db.payment.aggregate({

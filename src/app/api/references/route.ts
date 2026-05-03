@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 // GET /api/references — return filieres, levels, classes for dropdowns
 // Optional query params: ?filiereId=xxx (filter levels by filiere)
 export async function GET(req: NextRequest) {
+  const auth = await verifyAuth(req);
+  if (!auth.authorized) return auth.response;
+
   try {
     const { searchParams } = req.nextUrl;
     const filiereId = searchParams.get('filiereId') || undefined;

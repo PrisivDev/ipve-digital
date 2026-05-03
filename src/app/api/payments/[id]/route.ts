@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { json } from '@/lib/json';
+import { verifyAuth } from '@/lib/auth-helpers/route-auth';
 
 // GET /api/payments/[id] — get payment detail
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { id } = await params;
   const { paymentService } = await import('@/services/payment.service');
 
@@ -27,6 +31,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) return auth.response;
+
   const { id } = await params;
   const { paymentService } = await import('@/services/payment.service');
 
