@@ -235,9 +235,22 @@ function ChartSkeleton({ className }: { className?: string }) {
 // --- Derived data helpers ---
 
 function buildStudentsByProgramPie(data: DashboardApiData) {
-  // API returns { filiereId, _count } without names – fall back to empty.
-  // If entries had a name property we'd use it, but the groupBy doesn't include one.
-  return [] as { name: string; value: number; fill: string }[];
+  // Map filiereId to colors using the pieChartConfig keys
+  const filiereColorMap: Record<string, string> = {
+    'Informatique': COLORS.navy,
+    'Gestion': COLORS.maroon,
+    'Marketing': COLORS.gold,
+    'Comptabilité': COLORS.teal,
+  };
+
+  const entries = data.studentsByProgram ?? [];
+  if (entries.length === 0) return [];
+
+  return entries.map((entry) => ({
+    name: entry.filiereName,
+    value: entry._count.id,
+    fill: filiereColorMap[entry.filiereName] || COLORS.silver,
+  }));
 }
 
 function buildMappedPayments(data: DashboardApiData) {
@@ -367,9 +380,9 @@ export function DashboardView() {
   const totalProspects = data.prospects?.total ?? 0;
   const newProspects = data.prospects?.new ?? 0;
 
-  // Charts data – API doesn't provide monthly breakdown or attendance by subject
-  const monthlyRevenue: { month: string; revenue: number; expenses: number }[] = [];
-  const attendanceBySubject: { subject: string; taux: number }[] = [];
+  // Charts data – now provided by the API
+  const monthlyRevenue = data.monthlyRevenue ?? [];
+  const attendanceBySubject = data.attendanceBySubject ?? [];
   const studentsByProgram = buildStudentsByProgramPie(data);
   const mappedPayments = buildMappedPayments(data);
   const mappedNotifications = buildMappedNotifications(data);

@@ -23,3 +23,49 @@ Stage Summary:
 - All `react-hooks/set-state-in-effect` errors resolved
 - All `react-hooks/incompatible-library` warnings resolved via useWatch migration
 - Health endpoint adapted for SQLite (removed PostgreSQL connection string checks)
+---
+Task ID: 2
+Agent: main
+Task: Fix Dashboard API, update types/views, and create comprehensive seed data
+
+Work Log:
+- Installed PostgreSQL 16 from source in user space (/home/z/.local/postgresql)
+- Updated .env to point to local PostgreSQL (postgresql://z@localhost:5432/ipve)
+- Pushed Prisma schema to PostgreSQL (29 models)
+- Fixed Dashboard API (src/app/api/dashboard/route.ts):
+  - avgGrade now computed from real Grade data via db.grade.aggregate({ _avg: { score } })
+  - attendanceRate computed as percentage of PRESENT records
+  - Added monthlyRevenue: groups payments & expenses by month (auto-detects date range from data)
+  - Added attendanceBySubject: groups attendance by subject with PRESENT rate (resolves ClassSubject -> Subject join)
+  - Fixed studentsByProgram to include filiereName via Filiere table join
+- Updated Dashboard types (src/hooks/useDashboard.ts):
+  - Added monthlyRevenue and attendanceBySubject fields
+  - Updated studentsByProgram to include filiereName
+- Fixed Dashboard view (src/components/ipve/views/dashboard-view.tsx):
+  - buildStudentsByProgramPie now uses filiereName from API data with color mapping
+  - monthlyRevenue and attendanceBySubject now populated from API data
+- Created comprehensive seed script (prisma/seed-full.ts) seeding:
+  - 7 Roles (ADMIN, TEACHER, ACCOUNTANT, CASHIER, SECRETARY, PARENT, STUDENT)
+  - 1 Admin user + 5 additional users (3 teachers, 1 accountant, 1 cashier)
+  - 4 Filieres, 12 Levels, 1 Academic Year, 4 Classes
+  - 12 Subjects, 4 ClassSubjects, 1 Period
+  - 20 Students (Ivorian names, spread across filieres)
+  - 4 Payment Plans with 16 Tranches
+  - 30 Payments (70% COMPLETED, mix of payment methods)
+  - 40 Grades, 30 Attendance records
+  - 8 Prospects, 5 Notifications
+  - 5 Expense Categories, 8 Expenses
+
+Verified API response:
+- monthlyRevenue: 6 months (Déc 2024 - Mai 2025) with actual revenue/expense data
+- attendanceBySubject: Algorithmique 87%
+- studentsByProgram: 4 filieres with 5 students each (Comptabilité, Informatique, Gestion, Marketing)
+- academics: avgGrade 11.75, attendanceRate 87%
+- finances: revenue 3,190,068 / expenses 4,175,000
+
+Stage Summary:
+- Dashboard API now returns all real computed data from PostgreSQL
+- All 3 chart types (Revenue vs Expenses, Students by Program, Attendance by Subject) show real data
+- KPI cards display accurate counts and financial figures
+- Comprehensive seed data enables meaningful dashboard visualization
+

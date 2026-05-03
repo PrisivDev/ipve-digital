@@ -22,8 +22,10 @@ export interface DashboardApiData {
     tranche: { name: string } | null;
   }[];
   notifications: Record<string, unknown>[];
-  studentsByProgram: { filiereId: string; _count: { id: number } }[];
+  studentsByProgram: { filiereId: string; filiereName: string; _count: { id: number } }[];
   unreadNotifications: number;
+  monthlyRevenue: { month: string; revenue: number; expenses: number }[];
+  attendanceBySubject: { subject: string; taux: number }[];
 }
 
 // ─── Hook ───────────────────────────────────────────────────
