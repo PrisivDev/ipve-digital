@@ -2,7 +2,7 @@
  * IPVE Digital — Database Seed Script (PostgreSQL / Supabase)
  * ================================================================
  * Creates initial data for the IPVE school management system:
- * - 6 roles with RBAC permissions (164 permissions)
+ * - 6 roles with RBAC permissions (201 permissions)
  * - 6 default users (admin, teacher, accountant, cashier, secretary, student)
  * - 3 filières with 6 levels
  * - 1 academic year (2024-2025) with 2 periods
@@ -150,8 +150,23 @@ async function seedRBAC() {
 
   const allPerms = await db.permission.findMany();
   const permIdMap = new Map<string, string>();
+
+  // Index DB permissions by their stored key: (stored_module, resource, action)
+  const dbPermKey = (m: string, r: string, a: string) =>
+    `${m.toString().toLowerCase()}.${r}.${a.toString().toLowerCase()}`;
+  const dbPermsByStoredKey = new Map<string, string>();
   for (const p of allPerms) {
-    permIdMap.set(`${p.module.toString().toLowerCase()}.${p.resource}.${p.action.toLowerCase()}`, p.id);
+    dbPermsByStoredKey.set(dbPermKey(p.module, p.resource, p.action), p.id);
+  }
+
+  // Map original module names (used in ROLE_PERMS) to the DB permission IDs
+  for (const p of ALL_PERMS) {
+    const storedModule = MODULE_MAP[p.module] ?? 'LMS';
+    const storedKey = dbPermKey(storedModule, p.resource, p.action.toUpperCase());
+    const permId = dbPermsByStoredKey.get(storedKey);
+    if (permId) {
+      permIdMap.set(pk(p.module, p.resource, p.action), permId);
+    }
   }
 
   const roles = await db.role.findMany();
@@ -176,8 +191,50 @@ async function seedRBAC() {
 
 const TX_TIMEOUT = { timeout: 300_000 };
 
+async function cleanDatabase() {
+  console.log('  Cleaning existing data...');
+  await db.rolePermission.deleteMany();
+  await db.permission.deleteMany();
+  await db.journalEntryLine.deleteMany();
+  await db.journalEntry.deleteMany();
+  await db.payslip.deleteMany();
+  await db.payrollRun.deleteMany();
+  await db.payment.deleteMany();
+  await db.paymentPlanTranche.deleteMany();
+  await db.paymentPlan.deleteMany();
+  await db.grade.deleteMany();
+  await db.attendance.deleteMany();
+  await db.schedule.deleteMany();
+  await db.classSubject.deleteMany();
+  await db.notification.deleteMany();
+  await db.auditLog.deleteMany();
+  await db.syncLog.deleteMany();
+  await db.prospectInteraction.deleteMany();
+  await db.prospect.deleteMany();
+  await db.studentCard.deleteMany();
+  await db.student.deleteMany();
+  await db.admission.deleteMany();
+  await db.chartOfAccount.deleteMany();
+  await db.expense.deleteMany();
+  await db.supplier.deleteMany();
+  await db.expenseCategory.deleteMany();
+  await db.employee.deleteMany();
+  await db.subject.deleteMany();
+  await db.class.deleteMany();
+  await db.period.deleteMany();
+  await db.academicYear.deleteMany();
+  await db.level.deleteMany();
+  await db.filiere.deleteMany();
+  await db.institutionSettings.deleteMany();
+  await db.user.deleteMany();
+  await db.role.deleteMany();
+  console.log('  Database cleaned.');
+}
+
 async function seed() {
   console.log('Seeding IPVE database (Supabase PostgreSQL)...\n');
+  await cleanDatabase();
+  console.log('');
 
   // 6 ROLES
   const [adminRole, teacherRole, accountantRole, cashierRole, secretaryRole, studentRole] =
@@ -330,7 +387,6 @@ async function seed() {
   console.log(`  ${paymentPlans.length} payment plans created`);
 
   // Sample payments
-  await db.payment.deleteMany();
   const paymentMethods = ['CASH', 'MTN_MOMO', 'ORANGE_MONEY', 'WAVE', 'BANK_TRANSFER', 'CHEQUE'];
   const paymentOps = [];
   let paymentCount = 0;
@@ -424,7 +480,6 @@ async function seed() {
   console.log(`  ${ohadaAccounts.length} OHADA accounts created`);
 
   // Notifications
-  await db.notification.deleteMany();
   await db.$transaction([
     db.notification.create({ data: { userId: users[0].id, type: 'INFO', title: 'Rentrée académique 2024-2025', message: 'La rentrée est programmée le 1er octobre 2024.' } }),
     db.notification.create({ data: { userId: users[0].id, type: 'WARNING', title: 'Paiements en retard', message: '8 étudiants ont des paiements en retard.' } }),
@@ -451,7 +506,7 @@ async function seed() {
   await seedRBAC();
 
   console.log('\nSeed completed successfully!');
-  console.log('  - 6 roles, 6 users, 164 permissions');
+  console.log('  - 6 roles, 6 users, 201 permissions');
   console.log('  - 3 filieres, 6 levels, 9 subjects');
   console.log('  - 20 students, 4 classes');
   console.log(`  - ${paymentPlans.length} payment plans, ${paymentCount} payments`);
