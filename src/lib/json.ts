@@ -20,13 +20,20 @@ export function safeJson(data: unknown): unknown {
     return data.toString();
   }
   
-  // Handle Prisma.Decimal (which has .toNumber() and .toFixed())
-  if (data instanceof Prisma.Decimal || (data && typeof data === 'object' && 's' in data && 'e' in data && 'd' in data)) {
+  // Handle Prisma.Decimal (check for the constructor or the internal structure)
+  if (data instanceof Prisma.Decimal) {
     return Number(data);
   }
   
-  if (data instanceof Date) {
-    return data.toISOString();
+  // Fallback: objects that look like Prisma.Decimal (has d array + e number + s boolean)
+  if (
+    typeof data === 'object' &&
+    data !== null &&
+    !Array.isArray(data) &&
+    typeof (data as Record<string, unknown>).constructor === 'function' &&
+    (data as Record<string, unknown>).constructor.name === 'Decimal'
+  ) {
+    return Number(data);
   }
   
   if (Array.isArray(data)) {
@@ -48,13 +55,11 @@ export function safeJson(data: unknown): unknown {
  * Stringify data safely, handling BigInt and Decimal values.
  */
 export function safeStringify(data: unknown, space?: string | number): string {
-  return JSON.stringify(data, (_, value) =>
-    typeof value === 'bigint' ? value.toString() : value
-  , space);
+  return JSON.stringify(safeJson(data), undefined, space);
 }
 
 /**
- * Drop-in replacement for NextResponse.json that handles BigInt serialization.
+ * Drop-in replacement for NextResponse.json that handles BigInt and Decimal serialization.
  * 
  * Usage:
  *   import { json } from '@/lib/json';

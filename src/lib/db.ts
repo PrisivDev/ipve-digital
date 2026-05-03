@@ -7,8 +7,10 @@ import { PrismaClient } from '@prisma/client'
  *
  * Singleton pattern to prevent multiple instances during hot-reload.
  *
- * IMPORTANT: We explicitly read DATABASE_URL from .env to avoid
- * system-level env vars (like SQLite defaults) overriding our config.
+ * IMPORTANT: We explicitly read DATABASE_URL from the .env file because
+ * some hosting environments inject a default DATABASE_URL that points to
+ * a local SQLite file. Reading directly from .env ensures we always use
+ * the configured Supabase PostgreSQL connection.
  */
 
 function readEnvUrl(varName: string): string | undefined {
@@ -17,12 +19,25 @@ function readEnvUrl(varName: string): string | undefined {
     const envContent = readFileSync(envPath, 'utf-8')
     for (const line of envContent.split('\n')) {
       const trimmed = line.trim()
-      if (trimmed.startsWith(`${varName}=`) && !trimmed.startsWith('#')) {
-        return trimmed.substring(`${varName}=`.length)
+      // Skip comments and empty lines
+      if (!trimmed || trimmed.startsWith('#')) continue
+      const eqIdx = trimmed.indexOf('=')
+      if (eqIdx === -1) continue
+      const key = trimmed.substring(0, eqIdx).trim()
+      if (key === varName) {
+        // Handle quoted values: DATABASE_URL="postgres://..." or DATABASE_URL='...'
+        let val = trimmed.substring(eqIdx + 1).trim()
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1)
+        }
+        // Strip inline comments: DATABASE_URL=postgres://... # comment
+        const hashIdx = val.indexOf(' #')
+        if (hashIdx !== -1) val = val.substring(0, hashIdx).trim()
+        return val
       }
     }
   } catch {
-    // .env not found
+    // .env not found — let Prisma use process.env as fallback
   }
   return undefined
 }

@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   GraduationCap,
+  Loader2,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -34,7 +35,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useStudents } from '@/hooks/useStudents';
+import {
+  useStudents,
+  useFilieres,
+  useLevels,
+} from '@/hooks/useStudents';
 import { StudentCard } from '@/components/students/StudentCard';
 import { StudentDetailSheet } from '@/components/students/StudentDetailSheet';
 import { StudentFormDialog } from '@/components/students/StudentFormDialog';
@@ -200,6 +205,12 @@ export function StudentsSection() {
   const [editStudentId, setEditStudentId] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
 
+  // ── Dynamic filter data from the database ──
+  const { data: filieres = [], isLoading: filieresLoading } = useFilieres();
+  const { data: levels = [], isLoading: levelsLoading } = useLevels(
+    filiereFilter !== 'all' ? filiereFilter : undefined
+  );
+
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
     setPage(1);
@@ -216,6 +227,7 @@ export function StudentsSection() {
   // Filter handlers that reset page to 1
   const handleFiliereChange = useCallback((v: string) => {
     setFiliereFilter(v);
+    setLevelFilter('all'); // reset level when filiere changes
     setPage(1);
   }, []);
   const handleLevelChange = useCallback((v: string) => {
@@ -295,25 +307,43 @@ export function StudentsSection() {
         {/* Filters */}
         <Select value={filiereFilter} onValueChange={handleFiliereChange}>
           <SelectTrigger className="w-full sm:w-[170px]">
-            <SelectValue placeholder="Filiere" />
+            {filieresLoading ? (
+              <span className="flex items-center gap-1.5 text-muted-foreground text-sm">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Chargement...
+              </span>
+            ) : (
+              <SelectValue placeholder="Filiere" />
+            )}
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Toutes les filieres</SelectItem>
-            <SelectItem value="f1">Informatique (BTS)</SelectItem>
-            <SelectItem value="f2">Gestion &amp; Commerce</SelectItem>
-            <SelectItem value="f3">Marketing Digital</SelectItem>
+            {filieres.map((f) => (
+              <SelectItem key={f.id} value={f.id}>
+                {f.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
         <Select value={levelFilter} onValueChange={handleLevelChange}>
           <SelectTrigger className="w-full sm:w-[150px]">
-            <SelectValue placeholder="Niveau" />
+            {levelsLoading ? (
+              <span className="flex items-center gap-1.5 text-muted-foreground text-sm">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Chargement...
+              </span>
+            ) : (
+              <SelectValue placeholder="Niveau" />
+            )}
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les niveaux</SelectItem>
-            <SelectItem value="l1">Licence 1 / BTS 1</SelectItem>
-            <SelectItem value="l2">Licence 2 / BTS 2</SelectItem>
-            <SelectItem value="l3">Licence 3</SelectItem>
+            {levels.map((l) => (
+              <SelectItem key={l.id} value={l.id}>
+                {l.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
