@@ -28,6 +28,14 @@ import {
   BookMarked,
   FileBarChart,
   LogOut,
+  School,
+  List,
+  Tag,
+  Truck,
+  Shield,
+  Bell,
+  Palette,
+  Database,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore, type Module, type CrmSection, type ErpSection, type LmsSection, type SettingsSection } from '@/store/app-store';
@@ -100,6 +108,25 @@ const moduleGroups: ModuleGroup[] = [
     id: 'settings',
     label: 'Paramètres',
     icon: Settings,
+    subItems: [
+      { label: 'Vue d\'ensemble', icon: LayoutDashboard, section: 'overview' },
+      { label: 'Institution', icon: School, section: 'institution' },
+      { label: 'Filières', icon: BookOpen, section: 'filieres' },
+      { label: 'Niveaux', icon: List, section: 'niveaux' },
+      { label: 'Classes', icon: Users, section: 'classes' },
+      { label: 'Matières', icon: BookMarked, section: 'matieres' },
+      { label: 'Années scolaires', icon: CalendarDays, section: 'annees-scolaires' },
+      { label: 'Config paiements', icon: CreditCard, section: 'config-paiements' },
+      { label: 'Cat. dépenses', icon: Tag, section: 'categories-depenses' },
+      { label: 'Fournisseurs', icon: Truck, section: 'fournisseurs' },
+      { label: 'Utilisateurs', icon: UserCheck, section: 'users' },
+      { label: 'Rôles & Permissions', icon: Shield, section: 'roles-permissions' },
+      { label: 'Sécurité', icon: Shield, section: 'securite' },
+      { label: 'Audit', icon: FileText, section: 'audit' },
+      { label: 'Notifications', icon: Bell, section: 'notifications' },
+      { label: 'Apparence', icon: Palette, section: 'apparence' },
+      { label: 'Données', icon: Database, section: 'donnees' },
+    ],
   },
 ];
 
@@ -125,6 +152,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     if (groupId === 'crm') return crmSection === section;
     if (groupId === 'erp') return erpSection === section;
     if (groupId === 'lms') return lmsSection === section;
+    if (groupId === 'settings') return settingsSection === section;
     return false;
   };
 
@@ -142,8 +170,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     } else {
       // Standalone module — just activate
       setActiveModule(id);
-      // Reset settings section to overview when clicking settings in sidebar
-      if (id === 'settings') setSettingsSection('overview');
     }
     onNavigate?.();
   };
@@ -153,6 +179,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     if (groupId === 'crm') setCrmSection(section as CrmSection);
     if (groupId === 'erp') setErpSection(section as ErpSection);
     if (groupId === 'lms') setLmsSection(section as LmsSection);
+    if (groupId === 'settings') setSettingsSection(section as SettingsSection);
     // Ensure parent accordion stays open
     setExpandedId(groupId);
     onNavigate?.();
