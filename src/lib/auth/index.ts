@@ -15,7 +15,7 @@ export {
   hashPassword,
   verifyPassword,
 } from './auth.utils';
-export { extractAccessToken } from './auth-helpers/route-auth';
+export { extractAccessToken } from '../auth-helpers/route-auth';
 export {
   hasPermission,
   hasResourcePermission,
