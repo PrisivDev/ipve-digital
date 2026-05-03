@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Info,
+  RefreshCw,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -272,7 +273,7 @@ function buildMappedNotifications(data: DashboardApiData) {
 
 // --- Main Dashboard View ---
 export function DashboardView() {
-  const { data, isLoading, isError } = useDashboard();
+  const { data, isLoading, isError, refetch, isRefetching } = useDashboard();
 
   // Loading state
   if (isLoading) {
@@ -362,6 +363,20 @@ export function DashboardView() {
             <AlertCircle className="h-8 w-8 mx-auto text-red-500 mb-2" />
             <p className="text-sm font-medium">Impossible de charger les données du tableau de bord</p>
             <p className="text-xs text-muted-foreground mt-1">Vérifiez votre connexion et réessayez.</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-4"
+              onClick={() => refetch()}
+              disabled={isRefetching}
+            >
+              {isRefetching ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Réessayer
+            </Button>
           </CardContent>
         </Card>
       </div>

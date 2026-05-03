@@ -17,6 +17,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "IPVE Digital - Gestion Scolaire",
   description: "Système de Gestion Scolaire - Institut Polytechnique Vase d'Élites",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/logo-ipve.png",
+  },
 };
 
 export default function RootLayout({

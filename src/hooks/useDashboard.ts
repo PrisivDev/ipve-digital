@@ -39,6 +39,8 @@ export function useDashboard() {
         return r.json();
       }),
     staleTime: 60_000, // 1 min
-    refetchInterval: 5 * 60 * 1000, // 5 min instead of 60s
+    refetchInterval: 5 * 60 * 1000, // 5 min
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 }

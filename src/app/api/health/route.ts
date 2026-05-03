@@ -3,23 +3,23 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const checks: Record<string, string | boolean | number> = {
+  const checks: Record<string, string | boolean | number | string[]> = {
     status: 'ok',
     nodeEnv: process.env.NODE_ENV ?? 'unknown',
-    database: 'SQLite (Prisma)',
+    database: 'PostgreSQL (Supabase)',
     vercel: !!process.env.VERCEL,
     region: process.env.VERCEL_REGION ?? 'local',
   };
 
   // Test DB connection using the shared health check
-  const { checkDbHealth, db } = await import('@/lib/db');
-  const health = await checkDbHealth();
-  checks.dbConnected = health.ok;
-  if (health.latencyMs !== undefined) checks.dbLatencyMs = health.latencyMs;
-  if (health.error) checks.dbError = health.error;
-
-  // Check which tables exist in the database
   try {
+    const { checkDbHealth, db } = await import('@/lib/db');
+    const health = await checkDbHealth();
+    checks.dbConnected = health.ok;
+    if (health.latencyMs !== undefined) checks.dbLatencyMs = health.latencyMs;
+    if (health.error) checks.dbError = health.error;
+
+    // Check which tables exist in the database
     const tables = [
       'users', 'roles', 'permissions', 'role_permissions',
       'students', 'prospects', 'prospect_interactions',
