@@ -20,6 +20,7 @@ import { join } from 'path';
 config({ path: join(process.cwd(), '.env'), override: true });
 
 import { hash } from 'bcryptjs';
+import { randomUUID } from 'crypto';
 import { db } from '../src/lib/db';
 
 // ========================
@@ -206,11 +207,12 @@ async function seed() {
   console.log('  6 users created');
 
   // Academic year + periods
-  const [academicYear, period1, period2] = await db.$transaction([
-    db.academicYear.upsert({ where: { id: 'ay-2024-2025' }, update: {}, create: { id: 'ay-2024-2025', name: '2024-2025', startDate: new Date('2024-10-01'), endDate: new Date('2025-07-31'), isCurrent: true } }),
-    db.period.upsert({ where: { id: 'period-s1' }, update: {}, create: { id: 'period-s1', name: 'Semestre 1', academicYearId: 'ay-2024-2025', startDate: new Date('2024-10-01'), endDate: new Date('2025-02-28'), isCurrent: true } }),
-    db.period.upsert({ where: { id: 'period-s2' }, update: {}, create: { id: 'period-s2', name: 'Semestre 2', academicYearId: 'ay-2024-2025', startDate: new Date('2025-03-01'), endDate: new Date('2025-07-31'), isCurrent: false } }),
-  ], TX_TIMEOUT);
+  const { academicYear, period1, period2 } = await db.$transaction(async (tx) => {
+    const academicYear = await tx.academicYear.create({ data: { name: '2024-2025', startDate: new Date('2024-10-01'), endDate: new Date('2025-07-31'), isCurrent: true } });
+    const period1 = await tx.period.create({ data: { name: 'Semestre 1', academicYearId: academicYear.id, startDate: new Date('2024-10-01'), endDate: new Date('2025-02-28'), isCurrent: true } });
+    const period2 = await tx.period.create({ data: { name: 'Semestre 2', academicYearId: academicYear.id, startDate: new Date('2025-03-01'), endDate: new Date('2025-07-31'), isCurrent: false } });
+    return { academicYear, period1, period2 };
+  }, TX_TIMEOUT);
   console.log('  Academic year 2024-2025 created');
 
   // 3 filières + 6 levels
@@ -218,12 +220,12 @@ async function seed() {
     const f1 = await tx.filiere.upsert({ where: { code: 'INFO-BTS' }, update: {}, create: { code: 'INFO-BTS', name: 'BTS Informatique', description: 'Développement Web, Bases de données, Réseaux', durationYears: 2, isActive: true } });
     const f2 = await tx.filiere.upsert({ where: { code: 'GECO-BTS' }, update: {}, create: { code: 'GECO-BTS', name: 'BTS Gestion & Comptabilité', description: 'Comptabilité OHADA, Gestion, Droit des affaires', durationYears: 2, isActive: true } });
     const f3 = await tx.filiere.upsert({ where: { code: 'CPTA-BTS' }, update: {}, create: { code: 'CPTA-BTS', name: 'BTS Comptabilité', description: 'Comptabilité OHADA, Fiscalité, Audit', durationYears: 2, isActive: true } });
-    const l1 = await tx.level.upsert({ where: { id: 'level-info-bts1' }, update: {}, create: { id: 'level-info-bts1', name: 'BTS 1 Informatique', filiereId: f1.id, yearNumber: 1, tuitionFee: 425000 } });
-    const l2 = await tx.level.upsert({ where: { id: 'level-info-bts2' }, update: {}, create: { id: 'level-info-bts2', name: 'BTS 2 Informatique', filiereId: f1.id, yearNumber: 2, tuitionFee: 425000 } });
-    const l3 = await tx.level.upsert({ where: { id: 'level-geco-bts1' }, update: {}, create: { id: 'level-geco-bts1', name: 'BTS 1 Gestion & Comptabilité', filiereId: f2.id, yearNumber: 1, tuitionFee: 360000 } });
-    const l4 = await tx.level.upsert({ where: { id: 'level-geco-bts2' }, update: {}, create: { id: 'level-geco-bts2', name: 'BTS 2 Gestion & Comptabilité', filiereId: f2.id, yearNumber: 2, tuitionFee: 360000 } });
-    const l5 = await tx.level.upsert({ where: { id: 'level-cpta-bts1' }, update: {}, create: { id: 'level-cpta-bts1', name: 'BTS 1 Comptabilité', filiereId: f3.id, yearNumber: 1, tuitionFee: 390000 } });
-    const l6 = await tx.level.upsert({ where: { id: 'level-cpta-bts2' }, update: {}, create: { id: 'level-cpta-bts2', name: 'BTS 2 Comptabilité', filiereId: f3.id, yearNumber: 2, tuitionFee: 390000 } });
+    const l1 = await tx.level.create({ data: { name: 'BTS 1 Informatique', filiereId: f1.id, yearNumber: 1, tuitionFee: 425000 } });
+    const l2 = await tx.level.create({ data: { name: 'BTS 2 Informatique', filiereId: f1.id, yearNumber: 2, tuitionFee: 425000 } });
+    const l3 = await tx.level.create({ data: { name: 'BTS 1 Gestion & Comptabilité', filiereId: f2.id, yearNumber: 1, tuitionFee: 360000 } });
+    const l4 = await tx.level.create({ data: { name: 'BTS 2 Gestion & Comptabilité', filiereId: f2.id, yearNumber: 2, tuitionFee: 360000 } });
+    const l5 = await tx.level.create({ data: { name: 'BTS 1 Comptabilité', filiereId: f3.id, yearNumber: 1, tuitionFee: 390000 } });
+    const l6 = await tx.level.create({ data: { name: 'BTS 2 Comptabilité', filiereId: f3.id, yearNumber: 2, tuitionFee: 390000 } });
     return { filieres: [f1, f2, f3], levels: [l1, l2, l3, l4, l5, l6] };
   }, TX_TIMEOUT);
   console.log('  3 filieres and 6 levels created');
@@ -285,10 +287,10 @@ async function seed() {
       });
       createdStudents.push(student);
     }
-    const c0 = await tx.class.upsert({ where: { id: 'class-info-bts1' }, update: {}, create: { id: 'class-info-bts1', name: 'BTS 1 Info - Groupe A', levelId: levels[0].id, academicYearId: academicYear.id, capacity: 35, room: 'Salle A1' } });
-    const c1 = await tx.class.upsert({ where: { id: 'class-info-bts2' }, update: {}, create: { id: 'class-info-bts2', name: 'BTS 2 Info - Groupe A', levelId: levels[1].id, academicYearId: academicYear.id, capacity: 30, room: 'Labo Info' } });
-    const c2 = await tx.class.upsert({ where: { id: 'class-geco-bts1' }, update: {}, create: { id: 'class-geco-bts1', name: 'BTS 1 Geco - Groupe A', levelId: levels[2].id, academicYearId: academicYear.id, capacity: 40, room: 'Salle B2' } });
-    const c3 = await tx.class.upsert({ where: { id: 'class-cpta-bts1' }, update: {}, create: { id: 'class-cpta-bts1', name: 'BTS 1 Compta - Groupe A', levelId: levels[4].id, academicYearId: academicYear.id, capacity: 35, room: 'Salle C3' } });
+    const c0 = await tx.class.create({ data: { name: 'BTS 1 Info - Groupe A', levelId: levels[0].id, academicYearId: academicYear.id, capacity: 35, room: 'Salle A1' } });
+    const c1 = await tx.class.create({ data: { name: 'BTS 2 Info - Groupe A', levelId: levels[1].id, academicYearId: academicYear.id, capacity: 30, room: 'Labo Info' } });
+    const c2 = await tx.class.create({ data: { name: 'BTS 1 Geco - Groupe A', levelId: levels[2].id, academicYearId: academicYear.id, capacity: 40, room: 'Salle B2' } });
+    const c3 = await tx.class.create({ data: { name: 'BTS 1 Compta - Groupe A', levelId: levels[4].id, academicYearId: academicYear.id, capacity: 35, room: 'Salle C3' } });
     const createdClasses = [c0, c1, c2, c3];
     for (const student of createdStudents) {
       const sf = filieres.findIndex((f) => f.id === student.filiereId);
@@ -315,10 +317,9 @@ async function seed() {
   ];
   const paymentPlans = await db.$transaction(
     planConfigs.map(config =>
-      db.paymentPlan.upsert({
-        where: { id: `plan-${config.level.id}` }, update: {},
-        create: {
-          id: `plan-${config.level.id}`, name: config.name, levelId: config.level.id,
+      db.paymentPlan.create({
+        data: {
+          name: config.name, levelId: config.level.id,
           academicYearId: academicYear.id, totalAmount: config.total, currency: 'XOF', isActive: true,
           tranches: { create: config.tranches.map(t => ({ trancheNumber: t.n, name: t.name, amount: t.amount, dueDate: new Date(t.due), isMandatory: true })) },
         },
@@ -409,13 +410,17 @@ async function seed() {
     { number: '85', name: 'Résultat net avant impôt', cls: '8', type: 'EXPENSE', balance: 'DEBIT' },
     { number: '88', name: "Résultat de l'exercice", cls: '8', type: 'EXPENSE', balance: 'DEBIT' },
   ];
-  await db.$transaction(
-    ohadaAccounts.map(a => db.chartOfAccount.upsert({
-      where: { accountNumber: a.number }, update: {},
-      create: { accountNumber: a.number, accountName: a.name, accountClass: a.cls, accountType: a.type, normalBalance: a.balance, isActive: true },
-    })),
-    TX_TIMEOUT,
-  );
+  // Create OHADA accounts in small batches to avoid Supabase connection limits
+  for (let i = 0; i < ohadaAccounts.length; i += 10) {
+    const batch = ohadaAccounts.slice(i, i + 10);
+    await db.$transaction(
+      batch.map(a => db.chartOfAccount.upsert({
+        where: { accountNumber: a.number }, update: {},
+        create: { accountNumber: a.number, accountName: a.name, accountClass: a.cls, accountType: a.type, normalBalance: a.balance, isActive: true },
+      })),
+      TX_TIMEOUT,
+    );
+  }
   console.log(`  ${ohadaAccounts.length} OHADA accounts created`);
 
   // Notifications
@@ -429,10 +434,9 @@ async function seed() {
   console.log('  Notifications created');
 
   // Institution settings
-  await db.institutionSettings.upsert({
-    where: { id: 'default-settings' }, update: {},
-    create: {
-      id: 'default-settings', schoolName: "Institut Polytechnique Vase d'Élites", shortName: 'IPVE',
+  await db.institutionSettings.create({
+    data: {
+      schoolName: "Institut Polytechnique Vase d'Élites", shortName: 'IPVE',
       motto: 'Scientia Nobis Lumen', address: "Abidjan, Côte d'Ivoire", phone: '+225 27 21 00 00',
       email: 'infos@pve.edu.ci', website: 'www.ipve.edu.ci', academicYear: '2024-2025',
       currency: 'XOF', locale: 'fr-FR', passwordMinLength: 8, passwordRequireUppercase: true,

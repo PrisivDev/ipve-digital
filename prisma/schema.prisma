@@ -1,5 +1,5 @@
 // ================================================================
-// IPVE DIGITAL - Schéma Prisma ORM Complet (SQLite)
+// IPVE DIGITAL - Schéma Prisma ORM Complet (Supabase PostgreSQL)
 // Institut Polytechnique Vase d'Élites - Abidjan, Côte d'Ivoire
 // Comptabilité OHADA • Multi-tenant
 // ================================================================
@@ -9,12 +9,13 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ================================================================
-// ENUM NOTES (for reference — stored as String in SQLite)
+// ENUM NOTES (for reference — stored as String in PostgreSQL)
 // ================================================================
 // RoleName: ADMIN, TEACHER, ACCOUNTANT, CASHIER, SECRETARY, PARENT, STUDENT
 // PermissionModule: CRM, ERP, LMS, SETTINGS, REPORTS
@@ -47,10 +48,10 @@ datasource db {
 // ================================================================
 
 model User {
-  id            String    @id @default(uuid())
+  id            String    @id @default(uuid()) @db.Uuid
   email         String    @unique
   passwordHash  String    @map("password_hash")
-  roleId        String
+  roleId        String    @db.Uuid
   firstName     String    @map("first_name")
   lastName      String    @map("last_name")
   phone         String?
@@ -92,7 +93,7 @@ model User {
 }
 
 model Role {
-  id          String   @id @default(uuid())
+  id          String   @id @default(uuid()) @db.Uuid
   name        String   @unique
   description String?
   createdAt   DateTime @default(now()) @map("created_at")
@@ -105,7 +106,7 @@ model Role {
 }
 
 model Permission {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @db.Uuid
   module    String
   action    String
   resource  String
@@ -118,9 +119,9 @@ model Permission {
 }
 
 model RolePermission {
-  id           String @id @default(uuid())
-  roleId       String @map("role_id")
-  permissionId String @map("permission_id")
+  id           String @id @default(uuid()) @db.Uuid
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
 
   role       Role       @relation(fields: [roleId], references: [id])
   permission Permission @relation(fields: [permissionId], references: [id])
@@ -134,7 +135,7 @@ model RolePermission {
 // ================================================================
 
 model Prospect {
-  id                String    @id @default(uuid())
+  id                String    @id @default(uuid()) @db.Uuid
   firstName         String    @map("first_name")
   lastName          String    @map("last_name")
   email             String?
@@ -144,9 +145,9 @@ model Prospect {
   filiereInterest   String?   @map("filiere_interest")
   levelInterest     String?   @map("level_interest")
   notes             String?
-  assignedTo        String?
+  assignedTo        String?   @db.Uuid
   convertedAt       DateTime? @map("converted_at")
-  convertedStudentId String?  @unique @map("converted_student_id")
+  convertedStudentId String?  @unique @map("converted_student_id") @db.Uuid
   dateOfBirth       DateTime? @map("date_of_birth")
   gender            String    @default("MALE")
   nationality       String    @default("Ivoirienne")
@@ -172,13 +173,13 @@ model Prospect {
 }
 
 model ProspectInteraction {
-  id          String   @id @default(uuid())
-  prospectId  String   @map("prospect_id")
+  id          String   @id @default(uuid()) @db.Uuid
+  prospectId  String   @map("prospect_id") @db.Uuid
   type        String   @default("NOTE")
   subject     String?
   content     String
   direction   String?  @default("OUTGOING")
-  conductedBy String?  @map("conducted_by")
+  conductedBy String?  @map("conducted_by") @db.Uuid
   createdAt   DateTime @default(now()) @map("created_at")
 
   prospect        Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
@@ -190,9 +191,9 @@ model ProspectInteraction {
 }
 
 model Student {
-  id               String    @id @default(uuid())
+  id               String    @id @default(uuid()) @db.Uuid
   studentNumber    String    @unique @map("student_number")
-  userId           String?   @unique @map("user_id")
+  userId           String?   @unique @map("user_id") @db.Uuid
   firstName        String    @map("first_name")
   lastName         String    @map("last_name")
   dateOfBirth      DateTime? @map("date_of_birth")
@@ -202,9 +203,9 @@ model Student {
   photoUrl         String?   @map("photo_url")
   enrollmentDate   DateTime? @map("enrollment_date")
   status           String    @default("ENROLLED") @map("status")
-  filiereId        String?   @map("filiere_id")
-  levelId          String?   @map("level_id")
-  classId          String?   @map("class_id")
+  filiereId        String?   @map("filiere_id") @db.Uuid
+  levelId          String?   @map("level_id") @db.Uuid
+  classId          String?   @map("class_id") @db.Uuid
   parentName       String?   @map("parent_name")
   parentPhone      String?   @map("parent_phone")
   parentEmail      String?   @map("parent_email")
@@ -242,7 +243,7 @@ model Student {
 // ================================================================
 
 model Filiere {
-  id            String   @id @default(uuid())
+  id            String   @id @default(uuid()) @db.Uuid
   name          String
   code          String   @unique
   description   String?
@@ -261,9 +262,9 @@ model Filiere {
 }
 
 model Level {
-  id          String   @id @default(uuid())
+  id          String   @id @default(uuid()) @db.Uuid
   name        String
-  filiereId   String   @map("filiere_id")
+  filiereId   String   @map("filiere_id") @db.Uuid
   yearNumber  Int      @map("year_number")
   tuitionFee  Float    @default(0) @map("tuition_fee")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -281,7 +282,7 @@ model Level {
 }
 
 model AcademicYear {
-  id          String   @id @default(uuid())
+  id          String   @id @default(uuid()) @db.Uuid
   name        String
   startDate   DateTime @map("start_date")
   endDate     DateTime @map("end_date")
@@ -299,12 +300,12 @@ model AcademicYear {
 }
 
 model Class {
-  id             String   @id @default(uuid())
+  id             String   @id @default(uuid()) @db.Uuid
   name           String
-  levelId        String   @map("level_id")
+  levelId        String   @map("level_id") @db.Uuid
   capacity       Int      @default(40)
   room           String?
-  academicYearId String   @map("academic_year_id")
+  academicYearId String   @map("academic_year_id") @db.Uuid
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
@@ -322,7 +323,7 @@ model Class {
 }
 
 model Subject {
-  id          String   @id @default(uuid())
+  id          String   @id @default(uuid()) @db.Uuid
   name        String
   code        String   @unique
   description String?
@@ -338,10 +339,10 @@ model Subject {
 }
 
 model ClassSubject {
-  id           String   @id @default(uuid())
-  classId      String   @map("class_id")
-  subjectId    String   @map("subject_id")
-  teacherId    String?  @map("teacher_id")
+  id           String   @id @default(uuid()) @db.Uuid
+  classId      String   @map("class_id") @db.Uuid
+  subjectId    String   @map("subject_id") @db.Uuid
+  teacherId    String?  @map("teacher_id") @db.Uuid
   coefficient  Float    @default(1.0)
   hoursPerWeek Int      @default(2) @map("hours_per_week")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -362,9 +363,9 @@ model ClassSubject {
 }
 
 model Period {
-  id             String   @id @default(uuid())
+  id             String   @id @default(uuid()) @db.Uuid
   name           String
-  academicYearId String   @map("academic_year_id")
+  academicYearId String   @map("academic_year_id") @db.Uuid
   startDate      DateTime @map("start_date")
   endDate        DateTime @map("end_date")
   weight         Float    @default(1)
@@ -382,24 +383,24 @@ model Period {
 }
 
 model Grade {
-  id             String   @id @default(uuid())
-  studentId      String   @map("student_id")
-  subjectId      String   @map("subject_id")
-  classId        String   @map("class_id")
-  academicYearId String   @map("academic_year_id")
-  periodId       String   @map("period_id")
+  id             String   @id @default(uuid()) @db.Uuid
+  studentId      String   @map("student_id") @db.Uuid
+  subjectId      String   @map("subject_id") @db.Uuid
+  classId        String   @map("class_id") @db.Uuid
+  academicYearId String   @map("academic_year_id") @db.Uuid
+  periodId       String   @map("period_id") @db.Uuid
   evaluationType String   @default("DEVOIR") @map("evaluation_type")
-  score          Decimal
-  maxScore       Decimal  @default(20) @map("max_score")
-  coefficient    Decimal  @default(1)
-  enteredBy      String?  @map("entered_by")
+  score          Decimal  @db.Decimal(5, 2)
+  maxScore       Decimal  @default(20) @db.Decimal(5, 2) @map("max_score")
+  coefficient    Decimal  @default(1) @db.Decimal(5, 2)
+  enteredBy      String?  @map("entered_by") @db.Uuid
   isValidated    Boolean  @default(false) @map("is_validated")
-  validatedBy    String?  @map("validated_by")
+  validatedBy    String?  @map("validated_by") @db.Uuid
   comments       String?
   syncVersion    Int      @default(0) @map("sync_version")
   createdOffline Boolean  @default(false) @map("created_offline")
   createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   student        Student       @relation(fields: [studentId], references: [id])
   classSubject   ClassSubject? @relation(fields: [subjectId], references: [id])
@@ -418,14 +419,14 @@ model Grade {
 }
 
 model Attendance {
-  id           String   @id @default(uuid())
-  studentId    String   @map("student_id")
-  classId      String   @map("class_id")
-  subjectId    String   @map("subject_id")
+  id           String   @id @default(uuid()) @db.Uuid
+  studentId    String   @map("student_id") @db.Uuid
+  classId      String   @map("class_id") @db.Uuid
+  subjectId    String   @map("subject_id") @db.Uuid
   date         DateTime
   status       String   @default("PRESENT")
   justification String?
-  recordedBy   String?  @map("recorded_by")
+  recordedBy   String?  @map("recorded_by") @db.Uuid
   syncVersion  Int      @default(0) @map("sync_version")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
@@ -445,15 +446,15 @@ model Attendance {
 }
 
 model Schedule {
-  id             String   @id @default(uuid())
-  classId        String   @map("class_id")
-  subjectId      String   @map("subject_id")
-  teacherId      String?  @map("teacher_id")
+  id             String   @id @default(uuid()) @db.Uuid
+  classId        String   @map("class_id") @db.Uuid
+  subjectId      String   @map("subject_id") @db.Uuid
+  teacherId      String?  @map("teacher_id") @db.Uuid
   room           String?
   dayOfWeek      String   @map("day_of_week")
   startTime      String   @map("start_time")
   endTime        String   @map("end_time")
-  academicYearId String   @map("academic_year_id")
+  academicYearId String   @map("academic_year_id") @db.Uuid
   isActive       Boolean  @default(true) @map("is_active")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
@@ -474,11 +475,11 @@ model Schedule {
 // ================================================================
 
 model PaymentPlan {
-  id             String   @id @default(uuid())
+  id             String   @id @default(uuid()) @db.Uuid
   name           String
-  levelId        String   @map("level_id")
-  academicYearId String   @map("academic_year_id")
-  totalAmount    Decimal  @map("total_amount")
+  levelId        String   @map("level_id") @db.Uuid
+  academicYearId String   @map("academic_year_id") @db.Uuid
+  totalAmount    Decimal  @db.Decimal(12, 2) @map("total_amount")
   currency       String   @default("XOF")
   isActive       Boolean  @default(true) @map("is_active")
   createdAt      DateTime @default(now()) @map("created_at")
@@ -495,11 +496,11 @@ model PaymentPlan {
 }
 
 model PaymentPlanTranche {
-  id            String   @id @default(uuid())
-  planId        String   @map("plan_id")
+  id            String   @id @default(uuid()) @db.Uuid
+  planId        String   @map("plan_id") @db.Uuid
   trancheNumber Int      @map("tranche_number")
   name          String
-  amount        Decimal
+  amount        Decimal  @db.Decimal(12, 2)
   dueDate       DateTime? @map("due_date")
   isMandatory   Boolean  @default(true) @map("is_mandatory")
   createdAt     DateTime @default(now()) @map("created_at")
@@ -514,15 +515,15 @@ model PaymentPlanTranche {
 }
 
 model Payment {
-  id              String   @id @default(uuid())
+  id              String   @id @default(uuid()) @db.Uuid
   paymentNumber   String   @unique @map("payment_number")
-  studentId       String   @map("student_id")
-  trancheId       String   @map("tranche_id")
-  amountPaid      Decimal  @map("amount_paid")
+  studentId       String   @map("student_id") @db.Uuid
+  trancheId       String   @map("tranche_id") @db.Uuid
+  amountPaid      Decimal  @db.Decimal(12, 2) @map("amount_paid")
   paymentDate     DateTime @map("payment_date")
   paymentMethod   String   @map("payment_method")
   referenceNumber String?  @map("reference_number")
-  receivedBy      String?  @map("received_by")
+  receivedBy      String?  @map("received_by") @db.Uuid
   notes           String?
   receiptUrl      String?  @map("receipt_url")
   status          String   @default("PENDING")
@@ -545,13 +546,13 @@ model Payment {
 }
 
 model ExpenseCategory {
-  id          String   @id @default(uuid())
+  id          String   @id @default(uuid()) @db.Uuid
   name        String
   code        String?
   description String?
   budgetLimit Float    @default(0) @map("budget_limit")
   isActive    Boolean  @default(true) @map("is_active")
-  parentId    String?  @map("parent_id")
+  parentId    String?  @map("parent_id") @db.Uuid
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -564,7 +565,7 @@ model ExpenseCategory {
 }
 
 model Supplier {
-  id            String   @id @default(uuid())
+  id            String   @id @default(uuid()) @db.Uuid
   name          String
   contact       String?
   phone         String?
@@ -582,18 +583,18 @@ model Supplier {
 }
 
 model Expense {
-  id            String   @id @default(uuid())
+  id            String   @id @default(uuid()) @db.Uuid
   expenseNumber String   @unique @map("expense_number")
-  categoryId    String   @map("category_id")
+  categoryId    String   @map("category_id") @db.Uuid
   description   String
-  amount        Decimal
+  amount        Decimal  @db.Decimal(12, 2)
   expenseDate   DateTime @map("expense_date")
-  supplierId    String?  @map("supplier_id")
+  supplierId    String?  @map("supplier_id") @db.Uuid
   invoiceNumber String?  @map("invoice_number")
   invoiceUrl    String?  @map("invoice_url")
   paymentMethod String   @map("payment_method")
-  approvedBy    String?  @map("approved_by")
-  enteredBy     String?  @map("entered_by")
+  approvedBy    String?  @map("approved_by") @db.Uuid
+  enteredBy     String?  @map("entered_by") @db.Uuid
   status        String   @default("PENDING")
   syncVersion   Int      @default(0) @map("sync_version")
   createdAt     DateTime @default(now()) @map("created_at")
@@ -615,12 +616,12 @@ model Expense {
 // ================================================================
 
 model ChartOfAccount {
-  id            String   @id @default(uuid())
+  id            String   @id @default(uuid()) @db.Uuid
   accountNumber String   @unique @map("account_number")
   accountName   String   @map("account_name")
   accountClass  String   @map("account_class")
   accountType   String   @map("account_type")
-  parentId      String?  @map("parent_id")
+  parentId      String?  @map("parent_id") @db.Uuid
   isActive      Boolean  @default(true) @map("is_active")
   normalBalance String   @map("normal_balance")
   createdAt     DateTime @default(now()) @map("created_at")
@@ -638,7 +639,7 @@ model ChartOfAccount {
 }
 
 model JournalEntry {
-  id            String   @id @default(uuid())
+  id            String   @id @default(uuid()) @db.Uuid
   entryNumber   String   @unique @map("entry_number")
   entryDate     DateTime @map("entry_date")
   description   String
@@ -646,8 +647,8 @@ model JournalEntry {
   referenceType String?  @map("reference_type")
   referenceId   String?  @map("reference_id")
   isValidated   Boolean  @default(false) @map("is_validated")
-  createdBy     String?  @map("created_by")
-  validatedBy   String?  @map("validated_by")
+  createdBy     String?  @map("created_by") @db.Uuid
+  validatedBy   String?  @map("validated_by") @db.Uuid
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
@@ -663,11 +664,11 @@ model JournalEntry {
 }
 
 model JournalEntryLine {
-  id           String   @id @default(uuid())
-  entryId      String   @map("entry_id")
-  accountId    String   @map("account_id")
-  debitAmount  Decimal  @default(0) @map("debit_amount")
-  creditAmount Decimal  @default(0) @map("credit_amount")
+  id           String   @id @default(uuid()) @db.Uuid
+  entryId      String   @map("entry_id") @db.Uuid
+  accountId    String   @map("account_id") @db.Uuid
+  debitAmount  Decimal  @default(0) @db.Decimal(15, 2) @map("debit_amount")
+  creditAmount Decimal  @default(0) @db.Decimal(15, 2) @map("credit_amount")
   description  String?
   lineOrder    Int      @map("line_order")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -686,8 +687,8 @@ model JournalEntryLine {
 // ================================================================
 
 model Employee {
-  id                String   @id @default(uuid())
-  userId            String?  @unique @map("user_id")
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String?  @unique @map("user_id") @db.Uuid
   employeeNumber    String   @unique @map("employee_number")
   firstName         String   @map("first_name")
   lastName          String   @map("last_name")
@@ -696,9 +697,9 @@ model Employee {
   contractType      String   @map("contract_type")
   department        String   @default("ACADEMIQUE")
   position          String?
-  baseSalary        Decimal  @map("base_salary")
-  transportAllowance Decimal? @map("transport_allowance")
-  housingAllowance  Decimal? @map("housing_allowance")
+  baseSalary        Decimal  @db.Decimal(12, 2) @map("base_salary")
+  transportAllowance Decimal? @db.Decimal(12, 2) @map("transport_allowance")
+  housingAllowance  Decimal? @db.Decimal(12, 2) @map("housing_allowance")
   bankName          String?  @map("bank_name")
   bankAccount       String?  @map("bank_account")
   cnpsNumber        String?  @map("cnps_number")
@@ -718,15 +719,15 @@ model Employee {
 }
 
 model PayrollRun {
-  id                   String   @id @default(uuid())
+  id                   String   @id @default(uuid()) @db.Uuid
   month                Int
   year                 Int
   status               String   @default("DRAFT")
-  totalGross           Decimal  @default(0) @map("total_gross")
-  totalDeductions      Decimal  @default(0) @map("total_deductions")
-  totalNet             Decimal  @default(0) @map("total_net")
-  totalEmployerCharges Decimal  @default(0) @map("total_employer_charges")
-  validatedBy          String?  @map("validated_by")
+  totalGross           Decimal  @default(0) @db.Decimal(14, 2) @map("total_gross")
+  totalDeductions      Decimal  @default(0) @db.Decimal(14, 2) @map("total_deductions")
+  totalNet             Decimal  @default(0) @db.Decimal(14, 2) @map("total_net")
+  totalEmployerCharges Decimal  @default(0) @db.Decimal(14, 2) @map("total_employer_charges")
+  validatedBy          String?  @map("validated_by") @db.Uuid
   paymentDate          DateTime? @map("payment_date")
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
@@ -740,24 +741,24 @@ model PayrollRun {
 }
 
 model Payslip {
-  id                 String   @id @default(uuid())
-  payrollRunId       String   @map("payroll_run_id")
-  employeeId         String   @map("employee_id")
-  baseSalary         Decimal  @map("base_salary")
-  transportAllowance Decimal  @default(0) @map("transport_allowance")
-  housingAllowance   Decimal  @default(0) @map("housing_allowance")
-  otherBonuses       Decimal  @default(0) @map("other_bonuses")
-  grossSalary        Decimal  @map("gross_salary")
-  cnpsEmployee       Decimal  @default(0) @map("cnps_employee")
-  itsTax             Decimal  @default(0) @map("its_tax")
-  cmuEmployee        Decimal  @default(0) @map("cmu_employee")
-  totalDeductions    Decimal  @default(0) @map("total_deductions")
-  netSalary          Decimal  @map("net_salary")
-  cnpsEmployer       Decimal  @default(0) @map("cnps_employer")
-  accidentWork       Decimal  @default(0) @map("accident_work")
-  taxProfessional    Decimal  @default(0) @map("tax_professional")
-  fpc                Decimal  @default(0) @map("fpc")
-  totalEmployerCost  Decimal  @default(0) @map("total_employer_cost")
+  id                 String   @id @default(uuid()) @db.Uuid
+  payrollRunId       String   @map("payroll_run_id") @db.Uuid
+  employeeId         String   @map("employee_id") @db.Uuid
+  baseSalary         Decimal  @db.Decimal(12, 2) @map("base_salary")
+  transportAllowance Decimal  @default(0) @db.Decimal(12, 2) @map("transport_allowance")
+  housingAllowance   Decimal  @default(0) @db.Decimal(12, 2) @map("housing_allowance")
+  otherBonuses       Decimal  @default(0) @db.Decimal(12, 2) @map("other_bonuses")
+  grossSalary        Decimal  @db.Decimal(12, 2) @map("gross_salary")
+  cnpsEmployee       Decimal  @default(0) @db.Decimal(12, 2) @map("cnps_employee")
+  itsTax             Decimal  @default(0) @db.Decimal(12, 2) @map("its_tax")
+  cmuEmployee        Decimal  @default(0) @db.Decimal(12, 2) @map("cmu_employee")
+  totalDeductions    Decimal  @default(0) @db.Decimal(12, 2) @map("total_deductions")
+  netSalary          Decimal  @db.Decimal(12, 2) @map("net_salary")
+  cnpsEmployer       Decimal  @default(0) @db.Decimal(12, 2) @map("cnps_employer")
+  accidentWork       Decimal  @default(0) @db.Decimal(12, 2) @map("accident_work")
+  taxProfessional    Decimal  @default(0) @db.Decimal(12, 2) @map("tax_professional")
+  fpc                Decimal  @default(0) @db.Decimal(12, 2) @map("fpc")
+  totalEmployerCost  Decimal  @default(0) @db.Decimal(12, 2) @map("total_employer_cost")
   pdfUrl             String?  @map("pdf_url")
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
@@ -775,17 +776,17 @@ model Payslip {
 // ================================================================
 
 model SyncLog {
-  id                 String    @id @default(uuid())
+  id                 String    @id @default(uuid()) @db.Uuid
   deviceId           String    @map("device_id")
-  userId             String?   @map("user_id")
+  userId             String?   @map("user_id") @db.Uuid
   operation          String
   tableName          String    @map("table_name")
   recordId           String    @map("record_id")
-  payload            String
+  payload            String    @db.Text
   syncVersion        Int       @map("sync_version")
   syncedAt           DateTime? @map("synced_at")
   status             String    @default("PENDING")
-  conflictResolution String?   @map("conflict_resolution")
+  conflictResolution String?   @db.Text @map("conflict_resolution")
   createdAt          DateTime  @default(now()) @map("created_at")
 
   user User? @relation(fields: [userId], references: [id])
@@ -798,13 +799,13 @@ model SyncLog {
 }
 
 model AuditLog {
-  id         String   @id @default(uuid())
-  userId     String   @map("user_id")
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
   action     String
   resource   String
   resourceId String?  @map("resource_id")
-  oldValues  String?  @map("old_values")
-  newValues  String?  @map("new_values")
+  oldValues  String?  @db.Text @map("old_values")
+  newValues  String?  @db.Text @map("new_values")
   ipAddress  String?  @map("ip_address")
   userAgent  String?  @map("user_agent")
   createdAt  DateTime @default(now()) @map("created_at")
@@ -818,13 +819,13 @@ model AuditLog {
 }
 
 model Notification {
-  id        String   @id @default(uuid())
-  userId    String?  @map("user_id")
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
   type      String
   title     String
   message   String
   isRead    Boolean  @default(false) @map("is_read")
-  metadata  String?
+  metadata  String?  @db.Text
   createdAt DateTime @default(now()) @map("created_at")
 
   user User? @relation("UserNotifications", fields: [userId], references: [id])
@@ -841,7 +842,7 @@ model Notification {
 // ================================================================
 
 model InstitutionSettings {
-  id                      String   @id @default(uuid())
+  id                      String   @id @default(uuid()) @db.Uuid
   schoolName              String   @default("Institut Polytechnique Vase d'Élites") @map("school_name")
   shortName               String   @default("IPVE") @map("short_name")
   motto                   String?  @default("Scientia Nobis Lumen")
@@ -876,7 +877,7 @@ model InstitutionSettings {
 // ================================================================
 
 model Admission {
-  id                String    @id @default(uuid())
+  id                String    @id @default(uuid()) @db.Uuid
   admissionNumber   String    @unique @map("admission_number")
   firstName         String    @map("first_name")
   lastName          String    @map("last_name")
@@ -889,16 +890,16 @@ model Admission {
   parentName        String?   @map("parent_name")
   parentPhone       String?   @map("parent_phone")
   parentEmail       String?   @map("parent_email")
-  filiereId         String    @map("filiere_id")
-  levelId           String    @map("level_id")
+  filiereId         String    @map("filiere_id") @db.Uuid
+  levelId           String    @map("level_id") @db.Uuid
   previousSchool    String?   @map("previous_school")
   previousDiploma   String?   @map("previous_diploma")
   notes             String?
   status            String    @default("DRAFT")
-  reviewedBy        String?   @map("reviewed_by")
+  reviewedBy        String?   @map("reviewed_by") @db.Uuid
   reviewedAt        DateTime? @map("reviewed_at")
   decisionNote      String?   @map("decision_note")
-  enrolledStudentId String?   @unique @map("enrolled_student_id")
+  enrolledStudentId String?   @unique @map("enrolled_student_id") @db.Uuid
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
@@ -920,9 +921,9 @@ model Admission {
 // ================================================================
 
 model StudentCard {
-  id            String    @id @default(uuid())
+  id            String    @id @default(uuid()) @db.Uuid
   cardNumber    String    @unique @map("card_number")
-  studentId     String    @map("student_id")
+  studentId     String    @map("student_id") @db.Uuid
   status        String    @default("ACTIVE")
   issueDate     DateTime  @map("issue_date")
   expiryDate    DateTime? @map("expiry_date")

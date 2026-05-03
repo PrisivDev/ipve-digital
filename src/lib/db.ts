@@ -1,37 +1,30 @@
 import { readFileSync } from 'fs'
-import { join, resolve } from 'path'
+import { join } from 'path'
 import { PrismaClient } from '@prisma/client'
 
 /**
- * Prisma client singleton using globalThis pattern.
- * Prevents multiple instances during hot-reloading in development.
+ * IPVE Digital — Prisma Client (Supabase PostgreSQL)
  *
- * Reads DATABASE_URL from .env and resolves relative SQLite paths
- * from the project root directory (where package.json lives).
+ * Singleton pattern to prevent multiple instances during hot-reload.
+ *
+ * IMPORTANT: We explicitly read DATABASE_URL from .env to avoid
+ * system-level env vars (like SQLite defaults) overriding our config.
  */
-let resolvedDbUrl: string | undefined
 
-try {
-  const envPath = join(process.cwd(), '.env')
-  const envContent = readFileSync(envPath, 'utf-8')
-  for (const line of envContent.split('\n')) {
-    const trimmed = line.trim()
-    if (trimmed.startsWith('DATABASE_URL=') && !trimmed.startsWith('#')) {
-      let url = trimmed.substring('DATABASE_URL='.length)
-
-      // For SQLite relative paths (file:./... or file:../...), resolve from CWD
-      if (url.startsWith('file:./') || url.startsWith('file:../')) {
-        const relativePath = url.substring('file:'.length) // e.g. "./db/custom.db"
-        const absolutePath = resolve(process.cwd(), relativePath) // e.g. "/home/z/my-project/db/custom.db"
-        url = `file:${absolutePath}`
+function readEnvUrl(varName: string): string | undefined {
+  try {
+    const envPath = join(process.cwd(), '.env')
+    const envContent = readFileSync(envPath, 'utf-8')
+    for (const line of envContent.split('\n')) {
+      const trimmed = line.trim()
+      if (trimmed.startsWith(`${varName}=`) && !trimmed.startsWith('#')) {
+        return trimmed.substring(`${varName}=`.length)
       }
-
-      resolvedDbUrl = url
-      break
     }
+  } catch {
+    // .env not found
   }
-} catch {
-  // .env not found, will use process.env.DATABASE_URL
+  return undefined
 }
 
 const globalForPrisma = globalThis as unknown as {
@@ -42,7 +35,7 @@ export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-    datasourceUrl: resolvedDbUrl,
+    datasourceUrl: readEnvUrl('DATABASE_URL'),
   })
 
 if (process.env.NODE_ENV !== 'production') {
